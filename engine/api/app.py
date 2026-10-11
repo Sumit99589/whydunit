@@ -52,6 +52,45 @@ def create_app() -> FastAPI:
 
         return json.loads(RESULTS.read_text()) if RESULTS.exists() else {"summary": None, "scenarios": []}
 
+    @app.get("/status")
+    async def status() -> dict:
+        """What judges' modes can do right now: database, models, Tavily, runner, simulator, flagship, evals."""
+        from engine.connectors.base import KINDS  # noqa: F401
+        from engine.runtime.llm import get_llm
+        from engine.runtime.runner_client import RunnerClient
+        from engine.settings import env, load_config
+
+        out: dict = {"db": False}
+        try:
+            out["db"] = bool(await db.fetchrow("SELECT 1 AS ok"))
+            tick = await db.fetchrow("SELECT finished_at, ok FROM sim.ticks ORDER BY id DESC LIMIT 1")
+            out["simulator_last_tick"] = tick
+            flag = await db.fetchrow(
+                "SELECT id, status FROM cases WHERE status IN ('closed', 'verdict', 'verifying', "
+                "'fixing') AND world IN ('live', 'fixture:3inc') ORDER BY (world = 'live') DESC, "
+                "(status = 'closed') DESC, created_at DESC LIMIT 1"
+            )
+            out["flagship"] = flag
+            spent = await db.fetchrow(
+                "SELECT COALESCE(SUM(cost_usd), 0) AS s FROM cases "
+                "WHERE created_at >= date_trunc('day', now()) AND NOT auto_opened"
+            )
+            out["playground_budget"] = {
+                "spent_today_usd": float(spent["s"]),
+                "daily_budget_usd": load_config("budgets")["playground"]["daily_global_budget_usd"],
+            }
+        except Exception as e:  # noqa: BLE001
+            out["db_error"] = type(e).__name__
+        models = load_config("models")["roles"]
+        out["models"] = {
+            "configured": get_llm().available(),
+            "verified": all(r.get("verified") for r in models.values()),
+            "ids": {k: v["id"] for k, v in models.items()},
+        }
+        out["tavily"] = bool(env("TAVILY_API_KEY"))
+        out["runner"] = await RunnerClient().describe()
+        return out
+
     @app.get("/health")
     async def health() -> dict:
         row = await db.fetchrow("SELECT 1 AS ok")

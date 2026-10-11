@@ -10,6 +10,7 @@ tick_minutes: 15
 max_tick_window_hours: 3        # if ticks were skipped, back-fill at most this much
 
 traffic:
+  scale: 1.0                     # multiply all traffic (set ~0.3 after the video to save credits)
   organic_per_day: 1900
   real_sessions_per_tick: [2, 4] # real Playwright sessions with rrweb recording
   replay_country_mix: [US, GB, IN, DE, BR, CA, FR]

@@ -1,7 +1,8 @@
 # Progress
 
-Current stage: **Stage 14 — Hosting for judges** (Stages 1–3, 5, 8, 11 and 12 built, with their remaining
-"done when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages 4, 6, 7, 9, 10 and 13 done).
+Current stage: **Stage 15 — Hardening and revisits** (Stages 1–3, 5, 8, 11, 12 and 14 built, with their
+remaining "done when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages 4, 6, 7, 9, 10 and
+13 done).
 
 Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3, B4, B5, B11).
 
@@ -144,6 +145,14 @@ Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3
 - [x] Metrics: top-cause accuracy, share MAE, false-accusation rate, correct abstention, missed causes, time, cost
 - [x] Result: top cause 10/10, false accusations 0, share MAE 0.17 pp, abstention 2/2, ~2.5 s per case, $0
 - [x] Failures analysed in DECISIONS D69
+
+## Stage 14 — Hosting for judges (built; deploys wait on B4, B5, B11, B12)
+- [x] Hosting plan and steps (`docs/hosting.md`); Nebius endpoint cost computed (D70); HF Space files; `render.yaml`
+- [x] Judge modes: replay (`/cases/flagship`), playground (real Nemotron + one real Tavily call), live Acme (read-only)
+- [x] Guards: per-IP cases/hour, daily global budget with a replay fallback banner; per-case budget cap
+- [x] `/status` endpoint; `uptime.yml` daily check that opens an issue; simulator `traffic.scale`
+- [ ] Deployed: fresh browser, no credentials, replays the flagship and runs a playground case on the public URL;
+      cost per playground case measured (needs B1 for a non-zero number)
 
 ## Last verification
 ```

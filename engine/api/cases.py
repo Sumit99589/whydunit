@@ -25,12 +25,56 @@ class OpenCase(BaseModel):
     with_lead: bool = True
 
 
+_recent: dict[str, list[float]] = {}
+
+
+async def guard(request: Request, x_admin_key: str | None) -> None:
+    """Public demo guards: per-IP cases per hour and a daily global model budget. Admins bypass both."""
+    import time as _t
+
+    from engine.settings import env, load_config
+
+    if env("WHYDUNIT_ADMIN_KEY") and x_admin_key == env("WHYDUNIT_ADMIN_KEY"):
+        return
+    cfg = load_config("budgets")["playground"]
+    fwd = request.headers.get("x-forwarded-for")
+    ip = fwd.split(",")[0].strip() if fwd else (request.client.host if request.client else "?")
+    now = _t.time()
+    hits = [t for t in _recent.get(ip, []) if now - t < 3600]
+    if len(hits) >= int(cfg["per_ip_cases_per_hour"]):
+        raise HTTPException(
+            429,
+            {
+                "message": "You have opened several cases in the last hour. Watch the solved case "
+                "while the quota resets.",
+                "fallback": "/cases/flagship?replay=4",
+            },
+        )
+    row = await db.fetchrow(
+        "SELECT COALESCE(SUM(cost_usd), 0) AS spent FROM cases "
+        "WHERE created_at >= date_trunc('day', now()) AND NOT auto_opened"
+    )
+    if float(row["spent"]) >= float(cfg["daily_global_budget_usd"]):
+        raise HTTPException(
+            429,
+            {
+                "message": "Today's budget for new investigations is used up. The solved case replays "
+                "the same investigation at no cost.",
+                "fallback": "/cases/flagship?replay=4",
+            },
+        )
+    _recent[ip] = hits + [now]
+
+
 @router.post("")
-async def open_case(body: OpenCase) -> dict[str, Any]:
+async def open_case(
+    body: OpenCase, request: Request, x_admin_key: str | None = Header(default=None)
+) -> dict[str, Any]:
     from engine.runtime import orchestrator
 
     if not (body.world == "live" or body.world.startswith("fixture:")):
         raise HTTPException(422, "world must be 'live' or 'fixture:<name>'")
+    await guard(request, x_admin_key)
     case, registry = await orchestrator.open_case(body.world, body.metric)
 
     async def run() -> None:

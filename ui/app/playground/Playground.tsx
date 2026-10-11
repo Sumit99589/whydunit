@@ -20,13 +20,19 @@ export function Playground() {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [limited, setLimited] = useState<{ message: string; fallback: string } | null>(null);
   async function open(world: string, metric = "paid_subs") {
     setBusy(world);
     setError(null);
     try {
-      const r = await fetch("/engine/cases", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ world: `fixture:${world}`, metric }) });
+      const r = await fetch("/engine/cases", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ world: world === "__live__" ? "live" : `fixture:${world}`, metric }) });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.detail || "The engine refused the case");
+      if (r.status === 429 && typeof d.detail === "object") {
+        setLimited(d.detail);
+        setBusy(null);
+        return;
+      }
+      if (!r.ok) throw new Error(typeof d.detail === "string" ? d.detail : "The engine refused the case");
       router.push(`/cases/${d.id}`);
     } catch (e) {
       setError((e as Error).message);
@@ -36,6 +42,24 @@ export function Playground() {
   return (
     <>
       {error && <p className="mb-4 rounded-md border border-fail/40 p-3 text-sm text-fail">{error}</p>}
+      {limited && (
+        <div className="mb-4 rounded-lg border border-marker bg-surface p-4 text-sm">
+          <p>{limited.message}</p>
+          <a href={limited.fallback} className="mt-2 inline-block font-semibold underline">Watch the solved case</a>
+        </div>
+      )}
+      <button
+        onClick={() => open("__live__")}
+        disabled={busy !== null}
+        className="mb-6 flex w-full flex-col rounded-lg border border-ink bg-surface p-4 text-left hover:bg-surface-2 disabled:opacity-60"
+      >
+        <span className="font-semibold">Investigate the live Acme world</span>
+        <span className="mt-1 text-[13.5px] text-ink-2">
+          The sandbox startup running right now: real deployments, real Stripe test payments, real recordings. Read-only:
+          fixes are shown, never applied.
+        </span>
+        <span className="mt-3 text-[12.5px] font-semibold">{busy === "__live__" ? "Opening the case…" : "Investigate the last three days"}</span>
+      </button>
       <ul className="grid gap-3 sm:grid-cols-2">
         {WORLDS.map((w) => (
           <li key={w.id}>

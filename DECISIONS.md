@@ -277,3 +277,20 @@ Non-obvious choices and why. Items marked **revisit** are simplifications to com
      when it differs.
   Final: top cause 10/10, 0 false accusations, share MAE 0.17 pp, abstentions 2/2 (deterministic
   mode). LLM-mode results will be added once B1 lands (**revisit**).
+
+## Stage 14
+
+- **D70. The engine is not hosted on a Nebius Serverless Endpoint.** A 4 vCPU / 16 GB CPU instance is about
+  $0.10/h (Nebius price list, "from $0.10/h" for CPU-only Genoa; ~$71/month for cpu-d3 4 vCPU / 16 GB on
+  getdeploying.com). Always-on until Dec 15 (~7 weeks, ~1,180 h) would be ~$118, more than all the
+  credits (~$50). Recommended host: a free Hugging Face Docker Space (2 vCPU / 16 GB; the daily uptime ping
+  keeps it awake), Render as the alternative. Nebius Serverless **Jobs** stay for the browser runner,
+  paid per run, and Token Factory serves every model call.
+- **D71. Public-demo guards live in the engine** (`POST /cases`): 3 new cases per IP per hour and a $2
+  daily model budget for non-watcher cases. When either trips, the API returns 429 with a fallback link
+  and the playground shows "watch the solved case". Each case still has its own $0.60 cap. Admin-key
+  requests bypass the guards. Live Acme investigations are read-only.
+- **D72. The playground makes one real Tavily call per case** (the Voice detective's public-chatter
+  search) when a key is configured. Everything else in a fixture world stays deterministic, so eval
+  results and the playground agree.
+- **D73. The simulator has a `traffic.scale` knob** to turn the world down after recording the video.

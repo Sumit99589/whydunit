@@ -177,9 +177,20 @@ class VoiceDetective(Detective):
     async def public_chatter(self) -> None:
         ctx = self.ctx
         name = load_config("company_profile")["company"]["name"]
-        b = await self.fetch(
-            "world_news", ctx.case_window, {"query": f'"{name}" problems OR outage OR down OR complaints'}
-        )
+        q = {"query": f'"{name}" problems OR outage OR down OR complaints'}
+        b = None
+        if ctx.registry.mode == "fixture":
+            # Even in a fixture world, ask the real web (Tavily) whether anyone is talking about the product.
+            try:
+                tav = ctx.registry.get("tavily")
+                if await tav.available():
+                    b = await tav.fetch("world_news", ctx.case_window, q)
+                    await ctx.pin_derived(b, self.name)
+                    self.checked.append(f"world_news via tavily (tier {b.tier})")
+            except Exception:  # noqa: BLE001 - fall back to the world's own news
+                b = None
+        if b is None:
+            b = await self.fetch("world_news", ctx.case_window, q)
         if b is None:
             return
         if b.row_count == 0:

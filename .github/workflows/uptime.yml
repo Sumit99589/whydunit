@@ -1,0 +1,41 @@
+name: uptime
+
+# Daily check that the judge-facing demo is up (PLAN Stage 14); opens an issue when it is not.
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      UI_URL: ${{ vars.WHYDUNIT_UI_URL }}
+      ENGINE_URL: ${{ vars.WHYDUNIT_ENGINE_URL }}
+    steps:
+      - name: Check configuration
+        id: cfg
+        run: |
+          if [ -z "$UI_URL" ] || [ -z "$ENGINE_URL" ]; then echo "::notice::Set WHYDUNIT_UI_URL and WHYDUNIT_ENGINE_URL repo variables."; echo "ready=false" >> "$GITHUB_OUTPUT"; else echo "ready=true" >> "$GITHUB_OUTPUT"; fi
+      - name: Probe
+        if: steps.cfg.outputs.ready == 'true'
+        id: probe
+        run: |
+          fail=""
+          check() { code=$(curl -s -o /tmp/body -w '%{http_code}' --max-time 90 "$1"); echo "$1 -> $code"; [ "$code" = "200" ] || fail="$fail\n- $1 returned $code"; }
+          check "$UI_URL/"
+          check "$UI_URL/cases/flagship"
+          check "$ENGINE_URL/status"
+          check "$ENGINE_URL/cases/flagship/events"
+          check "$UI_URL/engine/evals"
+          if [ -n "$fail" ]; then printf "failures<<EOF\n$fail\nEOF\n" >> "$GITHUB_OUTPUT"; exit 1; fi
+      - name: Open an issue
+        if: failure() && steps.cfg.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "Demo is down ($(date -u +%F))" \
+            --body "The daily uptime check failed:$(printf '\n')${{ steps.probe.outputs.failures }}"

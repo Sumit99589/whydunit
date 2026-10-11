@@ -262,7 +262,10 @@ async def tick(now: datetime | None = None, *, skip_browsers: bool = False) -> d
             summary["health"] = {"carried_over": health}
 
         # 3. Simulated ad platform for the window (same day-level demand noise as organic traffic).
-        model = WorldModel(organic_per_day=float(schedule.traffic.get("organic_per_day", 1900)), seed=seed)
+        scale = float(schedule.traffic.get("scale", 1.0))  # turn the world down after the video is recorded
+        model = WorldModel(
+            organic_per_day=float(schedule.traffic.get("organic_per_day", 1900)) * scale, seed=seed
+        )
         paid_clicks: list[tuple[datetime, str]] = []
         day_start = w_start.replace(hour=0, minute=0, second=0, microsecond=0)
         for c in await ads.campaigns():
@@ -277,7 +280,7 @@ async def tick(now: datetime | None = None, *, skip_browsers: bool = False) -> d
                 spent_before=spent,
                 budget_at=budget,
                 rng=nprng,
-                demand_mult=model.day_noise,
+                demand_mult=lambda t: model.day_noise(t) * scale,
             )
             await ads.record_hours(hours)
             paid_clicks += [(t, c.name) for h in hours for t in h.click_times]

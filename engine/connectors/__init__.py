@@ -51,10 +51,13 @@ def live_registry() -> Registry:
 
 def fixture_registry(world: str) -> Registry:
     from engine.connectors.fixture import FixtureWorld
+    from engine.connectors.tavily_conn import Tavily
     from engine.fixtures.world import resolve_world
 
     path = resolve_world(world)
-    return Registry([FixtureWorld(path)], mode="fixture", label=f"Fixture world {path.stem}")
+    # The fixture world answers every kind (deterministic); Tavily rides along so the Voice detective can make one
+    # real, harmless public-web search ("is anyone talking about Acme Notes?") when a key is configured.
+    return Registry([FixtureWorld(path), Tavily()], mode="fixture", label=f"Fixture world {path.stem}")
 
 
 def registry_for(world: str) -> Registry:
