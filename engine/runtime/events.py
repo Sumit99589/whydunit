@@ -83,7 +83,7 @@ async def save_evidence(case_id: str, bundle: Any, detective: str | None) -> Non
     await db.execute(
         """INSERT INTO evidence (id, case_id, kind, connector, tier, detective, query, window_start, window_end,
                data_ref, summary, artifacts, confidence)
-           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (id) DO NOTHING""",
+           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) ON CONFLICT (case_id, id) DO NOTHING""",
         (
             bundle.id,
             case_id,

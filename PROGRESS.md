@@ -1,7 +1,8 @@
 # Progress
 
-Current stage: **Stage 8 — The remaining six detectives** (Stages 1–3 and 5 built, with their remaining
-"done when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages 4, 6 and 7 done).
+Current stage: **Stage 9 — Lead detective, cross-examination, attribution and verdict** (Stages 1–3, 5 and 8
+built, with their remaining "done when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages
+4, 6 and 7 done).
 
 Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3, B4, B5, B11).
 
@@ -86,9 +87,23 @@ Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3
       every iOS browser) 9.5% → 0.9% from Thu 09:00", "paid traffic 900 → 596/day from Thu 21:00", and
       "payment success concentrated in Brazil 95.3% → 64.5%"; all evidence valid; events in DB; SSE read with curl
 
+## Stage 8 — The remaining six detectives (fixture ✅; live checks wait on B1, B3, B4, B6, B9)
+- [x] Runner package (`runner/`): signup flow across 5-browser matrix, rrweb keyframe rendering, `run-flows` /
+      `render-replay` / `serve`; Dockerfile (Playwright 1.63 base); `runner-image.yml` (GHCR + smoke) and
+      `runner-job.yml` (Actions fallback, hardened inputs)
+- [x] `engine/runtime/runner_client.py`: Nebius Serverless Job / GitHub Actions / local / fixture backends
+- [x] Deploy: flows on each deployment, first failing deploy, diff, engine-API suspect lines, Omni on the screenshot
+- [x] Session: failed-signup recordings in the hardest-hit segment + controls; rage/dead clicks; Omni on keyframes
+- [x] Payments: success, issuer vs Acme-side, segment decline spike with codes and start time; API-error outages
+- [x] Ads: budget change history, budget-limited days and cap hour, clicks before/after
+- [x] Voice: topic clustering (Nano or rules), spikes vs baseline, quotes, Tavily public chatter
+- [x] World: Tavily news (competitors, industry, dependency outages), holidays, status pages, explicit checked-list
+- [x] All seven run concurrently (`engine/agents/team.py`); `tests/test_detectives.py` (6 worlds)
+- [ ] Live: Deploy detective finds the culprit through a real Nebius Job; Session Omni describes the failed taps
+
 ## Last verification
 ```
-uv run pytest -q              → 60 passed
+uv run pytest -q              → 66 passed
 uv run ruff check .           → clean
 snippet: pnpm test/typecheck  → 10 passed, clean
 acme-demo: tsc + eslint       → clean

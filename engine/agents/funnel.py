@@ -19,6 +19,8 @@ FACTOR_LABEL = {
     "checkout_rate": "Checkout rate",
     "payment_success_rate": "Payment success rate",
 }
+METRIC_STEP = {"paid_subs": "paid", "signups": "raw_signup_completed", "visitors": "visited"}
+METRIC_LABEL = {"paid_subs": "Paid subscriptions", "signups": "Signups (as tracked)", "visitors": "Visitors"}
 MIN_SHARE = 0.08  # a factor must explain at least this share of the change to be reported
 DIM_PREFERENCE = {"engine": 0, "channel": 1, "country": 2, "device": 3, "os": 4, "browser": 5}
 
@@ -39,8 +41,11 @@ class FunnelDetective(Detective):
         ctx = self.ctx
         sess, events = await ctx.sessions(self.name)
         self.sess, self.events_id = sess, events.id
-        await self.emit("tool_call", tool="assess_change", args={"metric": "paid_subs"}, by="playbook")
-        ch = assess_change(sess, "paid", ctx.window, ctx.baseline, ctx.history_start)
+        metric = ctx.case.metric
+        step = METRIC_STEP.get(metric, "paid")
+        await self.emit("tool_call", tool="assess_change", args={"metric": metric}, by="playbook")
+        ch = assess_change(sess, step, ctx.window, ctx.baseline, ctx.history_start)
+        await self.integrity_check(sess, events.id)
         d = decompose(sess, ctx.baseline, ctx.window)
         dec_ev = await self.analysis(
             "funnel_decomposition",
@@ -52,7 +57,8 @@ class FunnelDetective(Detective):
         chg_ev = await self.analysis(
             "change_assessment",
             ch["daily"],
-            f"Paid subs vs {ch['expectation']}: {ch['observed']:.0f} observed vs {ch['expected']:.0f} expected "
+            f"{METRIC_LABEL.get(metric, metric)} vs {ch['expectation']}: {ch['observed']:.0f} observed vs "
+            f"{ch['expected']:.0f} expected "
             f"(z = {ch['z']:.1f}) — {ch['verdict'].replace('_', ' ')}",
             [events.id],
             ctx.full_window,
@@ -60,12 +66,12 @@ class FunnelDetective(Detective):
         m_b = ctx.metric("paid subs per day, baseline", d["baseline_per_day"], "per_day", [dec_ev.id])
         m_w = ctx.metric("paid subs per day, window", d["window_per_day"], "per_day", [dec_ev.id])
         m_pc = ctx.metric("paid subs change vs baseline", d["pct_change"] or 0.0, "pct_change", [dec_ev.id])
-        m_exp = ctx.metric("paid subs expected in window (seasonal)", ch["expected"], "count", [chg_ev.id])
-        m_obs = ctx.metric("paid subs observed in window", ch["observed"], "count", [chg_ev.id])
+        m_exp = ctx.metric(f"{metric} expected in window (seasonal)", ch["expected"], "count", [chg_ev.id])
+        m_obs = ctx.metric(f"{metric} observed in window", ch["observed"], "count", [chg_ev.id])
         ctx.metric(  # registered for the model to cite
             "paid subs change vs seasonal expectation", ch["relative_change"], "pct_change", [chg_ev.id]
         )
-        m_z = ctx.metric("paid subs z-score vs normal variance", ch["z"], "z", [chg_ev.id])
+        m_z = ctx.metric(f"{metric} z-score vs normal variance", ch["z"], "z", [chg_ev.id])
         self.change = ch
         await self.emit(
             "tool_result", tool="assess_change", result={"verdict": ch["verdict"], "z": round(ch["z"], 2)}
@@ -85,7 +91,8 @@ class FunnelDetective(Detective):
                     "previous weeks look the same: this is the usual pattern, not a new problem."
                 )
             self.add_finding(
-                f"No real drop: {ch['observed']:.0f} paid subscriptions in the window against {ch['expected']:.0f} "
+                f"No real drop: {ch['observed']:.0f} {METRIC_LABEL.get(metric, metric).lower()} in the window against "
+                f"{ch['expected']:.0f} "
                 f"expected from the same weekdays in prior weeks (z = {ch['z']:.1f}), within normal variance.{extra}",
                 [events.id, chg_ev.id],
                 refs,
@@ -108,7 +115,14 @@ class FunnelDetective(Detective):
             if f["contribution_per_day"] >= 0 or share < MIN_SHARE:
                 continue
             await self.explain_factor(f, share, dec_ev.id)
-        await self.integrity_check(sess, events.id)
+        if metric != "paid_subs":
+            self.add_finding(
+                f"{METRIC_LABEL.get(metric, metric)} fell: {ch['observed']:.0f} in the window against {ch['expected']:.0f} "
+                f"expected (z = {ch['z']:.1f}).",
+                [events.id, chg_ev.id],
+                [m_obs.id, m_exp.id, m_z.id],
+                confidence=0.9,
+            )
 
     async def explain_factor(self, f: dict[str, Any], share: float, dec_id: str) -> None:
         ctx, sess = self.ctx, self.sess

@@ -144,3 +144,34 @@ Non-obvious choices and why. Items marked **revisit** are simplifications to com
 - **D41. SSE polls the event table** (0.4 s) instead of an in-process pub/sub, so streaming works across
   processes and hosts (the engine may run several workers). Replay re-emits stored events with their
   original gaps, capped at 4 s and divided by the requested speed.
+
+## Stage 8
+
+- **D42. Runner backends in preference order: Nebius Serverless Job → GitHub Actions → local (dev) →
+  recorded fixture results.** Jobs write `runs/<job_id>/results.json` (and screenshots or keyframes) to
+  object storage, and the engine polls for that file. Nebius's docs don't name a job-status command
+  (FEEDBACK), and polling storage works the same for every backend. Without a bucket, the Actions backend
+  uploads an artifact that the engine downloads. Nebius CPU platform and preset are in
+  `config/runner.yaml`, unverified until B9.
+- **D43. One signup flow implementation** (`runner/flows.py`) serves the Deploy detective, the
+  simulator's health probes, and the runner image. The flow also records whether `/api/signup` was ever
+  requested and whether anything covers the button, so the failure mode is evidence ("the button press
+  never sends the request").
+- **D44. Keyframes come from rrweb's own Replayer** (rrweb 2.1.7 UMD, vendored into the runner image at
+  build time, CDN fallback), paused at each click, every 4 s, and at the end.
+- **D45. Deploy suspect-line heuristics** use a table of engine-specific APIs (requestIdleCallback,
+  scheduler.postTask, navigator.userAgentData, …) matched against *added* diff lines and checked against
+  exactly which engines fail. Super refines this when a model is available. Fixture worlds have no
+  renderer, so the Session detective reports heuristics only there and Omni runs only on live recordings.
+- **D46. Voice topics**: Nano classifies messages into a fixed topic list in batches of 25, with keyword
+  rules as the fallback; spikes use a Poisson surprise with a floor, so a topic that was silent in the
+  baseline can still register. Quoted customer text (“…”) is exempt from number validation: it is
+  evidence, not a claim.
+- **D47. The World detective always ends with an explicit checked-list** (searches run, results reviewed,
+  holiday countries, status pages, and anything it could not check). Relevance of news is judged by Nano,
+  falling back to event-word rules within the window.
+- **D48. Evidence is keyed by (case_id, id)** (migration 0003). Evidence ids are deterministic hashes of
+  the query, so two cases on the same world produce the same ids.
+- **D49. The Funnel detective runs its tracking-integrity check on every case**, and tests the case's own
+  metric (`signups` uses raw signup_completed events). A tracking bug can look like "no real drop" in paid
+  subscriptions while signups appear to collapse.

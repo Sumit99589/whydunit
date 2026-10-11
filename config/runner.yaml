@@ -1,0 +1,19 @@
+# Browser runner backends, in order of preference (PLAN Stage 8). The first available one is used.
+backends: [nebius_job, github_actions, local]
+image: ghcr.io/sumit99589/whydunit-runner:latest
+nebius:
+  # UNVERIFIED until a Nebius AI Cloud project exists (BLOCKERS B9): CPU platform/preset names.
+  platform: cpu-d3
+  preset: 4vcpu-16gb
+  timeout: 1h
+  disk_size: 50Gi
+github:
+  repo: Sumit99589/whydunit
+  workflow: runner-job.yml
+  ref: main
+poll:
+  interval_s: 5
+  timeout_s: 900
+local:
+  # Development only: one browser at a time, capped by the caller (systemd-run MemoryMax=1200M).
+  max_parallel: 1

@@ -40,7 +40,12 @@ class Number:
     text: str
 
 
+_QUOTED = re.compile(r"“[^”]*”|\"[^\"]{12,}\"")
+
+
 def extract_numbers(text: str) -> list[Number]:
+    """Numbers stated as claims. Quoted customer text (“…”) is evidence, not a claim, so it is skipped."""
+    text = _QUOTED.sub(" ", text)
     out: list[Number] = []
     for a, b in _MONEY_CHANGE.findall(text):
         for t in (a, b):

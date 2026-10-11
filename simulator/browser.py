@@ -7,23 +7,16 @@ from __future__ import annotations
 
 import logging
 import random
-import time
 from typing import Any
 from urllib.parse import urlencode
 
-from playwright.async_api import Browser, Page, Playwright, async_playwright
+from playwright.async_api import Browser, Playwright, async_playwright
 from playwright.async_api import TimeoutError as PWTimeout
 
-log = logging.getLogger("whydunit.sim.browser")
+from runner.flows import MATRIX as PROBE_MATRIX
+from runner.flows import fill_signup, new_context, signup_flow
 
-# probe name -> (browser type, Playwright device descriptor or None for desktop)
-PROBE_MATRIX: dict[str, tuple[str, str | None]] = {
-    "chromium-desktop": ("chromium", None),
-    "webkit-desktop": ("webkit", None),
-    "webkit-mobile": ("webkit", "iPhone 15"),
-    "chromium-mobile": ("chromium", "Pixel 7"),
-    "firefox-desktop": ("firefox", None),
-}
+log = logging.getLogger("whydunit.sim.browser")
 
 # Session personas: (probe, weight). iPhone-heavy so failures show up in recordings when they happen.
 SESSION_MIX = [
@@ -34,51 +27,16 @@ SESSION_MIX = [
 ]
 
 
-async def _context(p: Playwright, browsers: dict[str, Browser], probe: str):
-    kind, device = PROBE_MATRIX[probe]
-    if kind not in browsers:
-        browsers[kind] = await getattr(p, kind).launch()
-    opts: dict[str, Any] = dict(p.devices[device]) if device else {"viewport": {"width": 1440, "height": 900}}
-    return await browsers[kind].new_context(**opts)
-
-
-async def _fill_signup(page: Page, name: str, email: str, rng: random.Random, human: bool) -> None:
-    delay = (lambda: rng.uniform(40, 120)) if human else (lambda: 0)
-    await page.get_by_label("Your name").click()
-    await page.get_by_label("Your name").press_sequentially(name, delay=delay())
-    await page.get_by_label("Work email").press_sequentially(email, delay=delay())
-    await page.get_by_label("Password").press_sequentially("correct-horse-battery", delay=delay())
-
-
 async def probe_signup(
     base_url: str, probe: str, p: Playwright, browsers: dict[str, Browser]
 ) -> dict[str, Any]:
-    """Can a new visitor sign up on this browser? Success = reaching /onboarding within 10 s of submitting."""
-    ctx = await _context(p, browsers, probe)
+    """Can a new visitor sign up on this browser? (the runner's signup flow, run from the simulator)"""
+    ctx = await new_context(p, browsers, probe)
     page = await ctx.new_page()
-    errors: list[str] = []
-    page.on("pageerror", lambda e: errors.append(str(e)[:200]))
-    t0 = time.monotonic()
     try:
-        q = urlencode({"wd_disable": "1", "wd_synthetic": "1"})
-        await page.goto(f"{base_url}/signup?{q}", wait_until="networkidle", timeout=30000)
-        stamp = int(time.time() * 1000)
-        await _fill_signup(
-            page, "Probe Bot", f"probe+{probe}-{stamp}@acme-notes.test", random.Random(), False
-        )
-        await page.get_by_role("button", name="Create account").click()
-        await page.wait_for_url("**/onboarding", timeout=10000)
-        return {"ok": True, "ms": int((time.monotonic() - t0) * 1000), "errors": errors}
-    except PWTimeout as e:
-        return {
-            "ok": False,
-            "ms": int((time.monotonic() - t0) * 1000),
-            "error": str(e).splitlines()[0][:200],
-            "url": page.url,
-            "errors": errors,
-        }
+        return await signup_flow(page, base_url, tag=f"probe-{probe}")
     except Exception as e:  # noqa: BLE001
-        return {"ok": False, "error": f"{type(e).__name__}: {str(e)[:200]}", "errors": errors, "infra": True}
+        return {"ok": False, "error": f"{type(e).__name__}: {str(e)[:200]}", "infra": True}
     finally:
         await ctx.close()
 
@@ -108,7 +66,7 @@ async def real_session(
     decline_pm: str | None = None,
 ) -> dict[str, Any]:
     """A human-paced visit with the snippet active and rrweb recording forced on."""
-    ctx = await _context(p, browsers, probe)
+    ctx = await new_context(p, browsers, probe)
     page = await ctx.new_page()
     result: dict[str, Any] = {"probe": probe, "country": country, "steps": []}
     params = {"wd_synthetic": "1", "wd_replay": "1", "wd_country": country}
@@ -132,12 +90,11 @@ async def real_session(
             rng.choice(["Maya", "Lucas", "Ana", "Tom", "Priya"]),
             rng.choice(["Silva", "Patel", "Weber"]),
         )
-        await _fill_signup(
+        await fill_signup(
             page,
             f"{first} {last}",
             f"{first.lower()}.{last.lower()}{rng.randint(10, 9999)}@example.com",
-            rng,
-            True,
+            delay=rng.uniform(40, 120),
         )
         button = page.get_by_role("button", name="Create account")
         await button.click()

@@ -1,0 +1,55 @@
+name: runner-job
+
+# Runs one browser-runner job on a GitHub-hosted VM (the fallback when no Nebius Serverless Job is available).
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: run-flows or render-replay
+        required: true
+      job_id:
+        required: true
+      spec:
+        description: JSON spec
+        required: true
+
+concurrency:
+  group: runner-${{ inputs.job_id }}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
+      S3_REGION: ${{ secrets.S3_REGION }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+      S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+      RUNNER_SPEC: ${{ inputs.spec }}
+      KIND: ${{ inputs.kind }}
+      JOB_ID: ${{ inputs.job_id }}
+    steps:
+      - name: Validate inputs
+        run: |
+          case "$KIND" in run-flows|render-replay) ;; *) echo "bad kind"; exit 1;; esac
+          [[ "$JOB_ID" =~ ^[a-z]+-[0-9]{14}-[0-9a-f]{6}$ ]] || { echo "bad job id"; exit 1; }
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen --no-dev
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('uv.lock') }}
+      - run: uv run playwright install --with-deps chromium webkit firefox
+      - run: uv run python -m runner "$KIND"
+      - name: Upload results (when no bucket is configured)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runner-${{ inputs.job_id }}
+          path: .cache/blobs/runs/${{ inputs.job_id }}
+          if-no-files-found: ignore
+          retention-days: 7

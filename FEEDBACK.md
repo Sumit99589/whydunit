@@ -18,3 +18,16 @@ happened, and a suggestion.
   `apply_chat_template(enable_thinking=…)`, vLLM `chat_template_kwargs`) but we found no Token Factory
   page confirming which form it honours. *Suggestion:* a short "reasoning control" section in the Token
   Factory docs with an OpenAI-SDK snippet using `extra_body`.
+
+- **[Nebius AI Cloud · Serverless Jobs docs] No documented way to read a job's status.** The "Manage jobs" page
+  covers list, logs, cancel and delete, and mentions only that `COMPLETED` jobs are cancelled automatically.
+  There is no `nebius ai job get` example and no list of states (pending/running/failed). An orchestrator that
+  launches jobs programmatically has to infer completion some other way (we poll for the job's output file in
+  object storage). *Suggestion:* document the job lifecycle states and a `job get --format json` example with the
+  status field path.
+- **[Nebius AI Cloud · Serverless Jobs docs] CPU-only jobs are under-documented.** `--platform` defaults to a GPU
+  (`gpu-h100-sxm` / `gpu-h200-sxm`), and the jobs pages say CPU VMs "only support the regular type" but name no
+  CPU platform or preset. A headless-browser workload (our runner) needs CPU only. *Suggestion:* add a CPU job
+  example (platform + preset) to the quickstart.
+- **[Nebius AI Cloud · CLI reference] Nice:** `job create --async --format 'jsonpath={.resource_id}'` returning
+  just the job id makes scripting easy, and `--inject-file` / `--env-secret` cover config and secrets cleanly.
