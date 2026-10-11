@@ -23,7 +23,15 @@ from engine.connectors.base import EvidenceBundle, Window, evidence_id, make_bun
 from engine.runtime import events as ev
 from engine.runtime.context import CaseContext
 from engine.runtime.llm import BudgetExceeded, LLMUnavailable
-from engine.runtime.schemas import CannotDetermine, DetectiveReport, EffectSpec, Finding, Hypothesis
+from engine.runtime.schemas import (
+    Answer,
+    CannotDetermine,
+    DetectiveReport,
+    EffectSpec,
+    Finding,
+    Hypothesis,
+    Question,
+)
 from engine.settings import load_config
 
 log = logging.getLogger("whydunit.agents")
@@ -172,6 +180,8 @@ class Detective:
         support: list[str],
         end: Any = None,
     ) -> Hypothesis:
+        # By default a hypothesis rests on the finding the detective has just made.
+        support = support or ([self.findings[-1].id] if self.findings else [])
         h = Hypothesis(
             statement=statement,
             effect=EffectSpec(factor=factor, segment=segment, start=start, end=end),  # type: ignore[arg-type]
@@ -184,6 +194,33 @@ class Detective:
     # ---------------------------------------------------------------- to implement
     async def playbook(self) -> None:
         raise NotImplementedError
+
+    async def answer(self, q: Question) -> Answer:
+        """Answer the lead's question with new evidence, or say cannot_determine."""
+        handler = getattr(self, f"answer_{q.kind}", None)
+        if handler is None:
+            return Answer(
+                question_id=q.id,
+                detective=self.name,
+                text="I have no way to check that.",
+                verdict="cannot_determine",
+                cannot_determine=CannotDetermine(kind=q.kind, reason=f"{self.name} has no {q.kind} check"),
+            )
+        try:
+            return await handler(q)
+        except Exception as e:  # noqa: BLE001 - an unanswerable question is an honest answer, not a crash
+            return Answer(
+                question_id=q.id,
+                detective=self.name,
+                text=f"Could not check: {type(e).__name__}.",
+                verdict="cannot_determine",
+                cannot_determine=CannotDetermine(kind=q.kind, reason=str(e)[:200]),
+            )
+
+    async def validated(self, f: Finding) -> Finding:
+        """Validate one answer finding (no re-prompt) and record it."""
+        acc, sus = await self.validate([f], reprompt=False)
+        return (acc or sus)[0]
 
     def tools(self) -> list[Tool]:
         return []

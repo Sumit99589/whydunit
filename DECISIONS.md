@@ -175,3 +175,24 @@ Non-obvious choices and why. Items marked **revisit** are simplifications to com
 - **D49. The Funnel detective runs its tracking-integrity check on every case**, and tests the case's own
   metric (`signups` uses raw signup_completed events). A tracking bug can look like "no real drop" in paid
   subscriptions while signups appear to collapse.
+
+## Stage 9
+
+- **D50. Hypotheses carry their evidence by role.** Proposals from the detective that owns a mechanism
+  (deploy, ads, payments, world) contribute *mechanism* evidence and name the cause (their segment and
+  time win when merged). Funnel break points that line up within 4 h contribute *timing* evidence.
+  Proposals merge when factor, segment and start agree (different dimensions with the same start, such
+  as os=iOS and engine=webkit, also merge).
+- **D51. Cross-examination is structured.** Questions have a `kind` (before_after, deploy_around,
+  ads_change_around, payments_segment, external_release, external_event) answered by code that pins new
+  evidence. Round 1 always re-confirms timing at the mechanism's exact moment and asks the World detective
+  to rule out a browser release for engine-specific signup drops. Later rounds only fill gaps. Answers
+  are supports, contradicts, neutral or cannot_determine, and contradictions are kept in the thread.
+- **D52. Judgement is code**: supported ⇔ mechanism ∧ timing ∧ no contradiction; anything else is
+  inconclusive or rejected, with the reason stored. Only supported hypotheses are attributed, so a
+  harmless deploy (flows pass) can never be blamed.
+- **D53. Special verdicts read the Funnel detective's structured state** (change verdict, tracking-gap
+  finding), not finding text, so they still work when Super rewrites the findings in LLM mode.
+- **D54. Ultra only rewrites the verdict narrative** (one call per case) and the number validator checks
+  it. If any number is not a computed metric, the template narrative stands and a `narrative_rejected`
+  event is logged. Shares are displayed within 0–100% (CI bounds clipped).

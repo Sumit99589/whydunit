@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from engine.agents.base import Detective, Tool
+from engine.agents.base import Detective, Tool, seg_label
 from engine.connectors.base import Artifact, Window
 from engine.runtime.runner_client import Fixture, RunnerClient, RunnerUnavailable
 
@@ -258,11 +258,43 @@ class DeployDetective(Detective):
         await self.read_screenshot(shot, failing, bad_ev.id)
         seg = {"engine": engines[0]} if len(engines) == 1 else {"engine": engines}
         self.propose(
-            f"Deployment {bad['git_sha'][:7]} broke signup on {', '.join(engines)}",
+            f"Deployment {bad['git_sha'][:7]} broke signup on {' and '.join(seg_label('engine', e) for e in engines)}",
             "signup_rate",
             seg,
             bad["created_at"],
             [],
+        )
+
+    async def answer_deploy_around(self, q):
+        """Did a deployment around the given time break the flow for the segment?"""
+        from datetime import datetime, timedelta
+
+        from engine.runtime.schemas import Answer
+
+        at = datetime.fromisoformat(q.params["at"]) if isinstance(q.params["at"], str) else q.params["at"]
+        bad = getattr(self, "bad", None)
+        if bad is None:
+            tested = any("signup flow on" in c for c in self.checked)
+            return Answer(
+                question_id=q.id,
+                detective=self.name,
+                verdict="contradicts" if tested else "cannot_determine",
+                text="No deployment in the window breaks signup on any browser."
+                if tested
+                else "I could not test the deployments.",
+            )
+        near = abs(bad["created_at"] - at) <= timedelta(hours=6)
+        return Answer(
+            question_id=q.id,
+            detective=self.name,
+            verdict="supports" if near else "neutral",
+            findings=[f for f in self.findings if f.status == "accepted"][:1],
+            text=(
+                f"Yes: deployment {bad['git_sha'][:7]} went out at {bad['created_at']:%a %H:%M} UTC and breaks "
+                "signup on those browsers."
+                if near
+                else f"The only breaking deployment ({bad['git_sha'][:7]}) is not close to that time."
+            ),
         )
 
     async def read_screenshot(self, key: str | None, failing: list[str], evid: str) -> None:

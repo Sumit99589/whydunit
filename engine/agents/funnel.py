@@ -12,6 +12,7 @@ from engine.analysis.changepoint import assess_change, cusum
 from engine.analysis.data import DIMS, FACTORS
 from engine.analysis.decompose import decompose
 from engine.analysis.segments import drilldown, factor_by_segment
+from engine.runtime.schemas import Finding
 
 FACTOR_LABEL = {
     "traffic": "Visitors",
@@ -36,6 +37,9 @@ class FunnelDetective(Detective):
         )
         self.sess: pl.DataFrame | None = None
         self.events_id = ""
+        self.change: dict | None = None
+        self.no_drop_finding: Finding | None = None
+        self.tracking_finding: Finding | None = None
 
     async def playbook(self) -> None:
         ctx = self.ctx
@@ -90,7 +94,7 @@ class FunnelDetective(Detective):
                     f" Against the case baseline it looks like a {pct(abs(naive), 0)} drop, but the same days in "
                     "previous weeks look the same: this is the usual pattern, not a new problem."
                 )
-            self.add_finding(
+            self.no_drop_finding = self.add_finding(
                 f"No real drop: {ch['observed']:.0f} {METRIC_LABEL.get(metric, metric).lower()} in the window against "
                 f"{ch['expected']:.0f} "
                 f"expected from the same weekdays in prior weeks (z = {ch['z']:.1f}), within normal variance.{extra}",
@@ -254,7 +258,7 @@ class FunnelDetective(Detective):
             )
             m0 = ctx.metric("checkout sessions missing signup_completed, baseline", g0, "share", [ev.id])
             m1 = ctx.metric("checkout sessions missing signup_completed, window", g1, "share", [ev.id])
-            self.add_finding(
+            self.tracking_finding = self.add_finding(
                 f"Tracking looks broken: {pct(g1, 0)} of sessions that reached checkout have no signup_completed event "
                 f"(baseline {pct(g0, 0)}). Signups are being under-counted; this may be a measurement problem.",
                 [events_id, ev.id],
@@ -262,6 +266,80 @@ class FunnelDetective(Detective):
                 kind="inference",
                 confidence=0.85,
             )
+
+    async def answer_before_after(self, q):
+        """Did the factor change in the segment right at the given time? (24 h either side)"""
+        from datetime import datetime, timedelta
+
+        from engine.analysis.bootstrap import rate_change_ci
+        from engine.analysis.data import FACTOR_DENOM, FACTOR_STEP, segment_mask
+        from engine.runtime.schemas import Answer
+
+        ctx, sess = self.ctx, self.sess
+        assert sess is not None
+        factor, segment = q.params["factor"], q.params.get("segment") or {}
+        at = datetime.fromisoformat(q.params["at"]) if isinstance(q.params["at"], str) else q.params["at"]
+        sl = " and ".join(seg_label(k, v) for k, v in segment.items()) or "all visitors"
+        # 24 h either side; widen to 48 h or 72 h when the segment is small.
+        for span in (float(q.params.get("hours", 24)), 48.0, 72.0):
+            hrs = timedelta(hours=span)
+            lo, hi = max(at - hrs, ctx.history_start), min(at + hrs, ctx.case.window_end)
+            s = sess.filter((pl.col("started_at") >= lo) & (pl.col("started_at") < hi))
+            before, after = s.filter(pl.col("started_at") < at), s.filter(pl.col("started_at") >= at)
+            if factor == "traffic":
+                # Segment's share of all visitors: robust to the daily traffic curve.
+                m = segment_mask(segment)
+                x0, n0 = before.filter(m).height, before.height
+                x1, n1 = after.filter(m).height, after.height
+                what = f"share of visitors from {sl}"
+            else:
+                num, den = FACTOR_STEP[factor], FACTOR_DENOM[factor]
+                b = before.filter(segment_mask(segment) & pl.col(den))
+                a = after.filter(segment_mask(segment) & pl.col(den))
+                x0, n0, x1, n1 = int(b[num].sum()), b.height, int(a[num].sum()), a.height
+                what = f"{FACTOR_LABEL[factor].lower()} for {sl}"
+            if min(n0, n1) >= 20:
+                break
+        if min(n0, n1) < 10:
+            return Answer(
+                question_id=q.id,
+                detective=self.name,
+                verdict="cannot_determine",
+                text="Too little data either side of that time to tell.",
+            )
+        ci = rate_change_ci(x0, n0, x1, n1)
+        r0, r1 = x0 / n0, x1 / n1
+        h_txt = f"{span:.0f} hours"
+        ev = await self.analysis(
+            f"before_after_{factor}_{'_'.join(f'{k}{v}' for k, v in segment.items())}_{at:%m%d%H%M}",
+            [{"before": r0, "after": r1, "n_before": n0, "n_after": n1, "hours": span, **ci}],
+            f"{what}: {h_txt} before vs after {at:%a %H:%M} UTC",
+            [self.events_id],
+            None,
+        )
+        m0 = ctx.metric(f"{what}, before {at:%a %H:%M}", r0, "rate", [ev.id])
+        m1 = ctx.metric(f"{what}, after {at:%a %H:%M}", r1, "rate", [ev.id])
+        m_h = ctx.metric(f"hours compared either side of {at:%a %H:%M}", span, "hours", [ev.id])
+        dropped = ci["diff_hi"] < 0 and r1 < r0 * 0.85
+        f = await self.validated(
+            Finding(
+                detective=self.name,
+                kind="observed",
+                evidence_ids=[self.events_id, ev.id],
+                metrics_refs=[m0.id, m1.id, m_h.id],
+                claim=(
+                    f"The {what} was {pct(r0)} in the {h_txt} before {at:%a %b %d %H:%M} UTC and {pct(r1)} after: "
+                    + ("a clear break at exactly that time." if dropped else "no clear break at that time.")
+                ),
+            )
+        )
+        return Answer(
+            question_id=q.id,
+            detective=self.name,
+            text=f.claim,
+            findings=[f],
+            verdict="supports" if dropped else "contradicts",
+        )
 
     def template_summary(self) -> str:
         return " ".join(f.claim.split(". ")[0] + "." for f in self.findings[:3]) or "No funnel data."

@@ -162,6 +162,7 @@ class PaymentsDetective(Detective):
                 [m_t0.id, m_t1.id, m_x0.id, m_x1.id] + ([m_c.id] if code_txt else []),
                 confidence=0.9,
             )
+            self.top_segment = top
             self.propose(
                 f"Card issuers in {label} started declining payments",
                 "payment_success_rate",
@@ -219,6 +220,27 @@ class PaymentsDetective(Detective):
                 start = w["created"][min(lo, len(x) - 1)]
                 break
         return start
+
+    async def answer_payments_segment(self, q):
+        from engine.runtime.schemas import Answer
+
+        seg = (q.params.get("segment") or {}).get("country")
+        top = getattr(self, "top_segment", None)
+        if top is None:
+            return Answer(
+                question_id=q.id,
+                detective=self.name,
+                verdict="contradicts" if self.findings else "cannot_determine",
+                text="No country shows a rise in card declines.",
+            )
+        ok = seg is None or seg == top["segment"]
+        return Answer(
+            question_id=q.id,
+            detective=self.name,
+            verdict="supports" if ok else "neutral",
+            findings=[f for f in self.findings if f.status == "accepted"][-1:],
+            text=f"Issuer declines rose for cards from {seg_label('country', top['segment'])}.",
+        )
 
     def tools(self) -> list[Tool]:
         return []

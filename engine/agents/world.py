@@ -13,6 +13,7 @@ import polars as pl
 
 from engine.agents.base import COUNTRY, Detective, Tool
 from engine.connectors.base import Window
+from engine.runtime.schemas import Answer, Finding
 from engine.settings import load_config
 
 EVENT_WORDS = (
@@ -177,6 +178,98 @@ class WorldDetective(Detective):
             except Exception:  # noqa: BLE001 - fall back to rules
                 pass
         return [h for h in uniq if re.search(EVENT_WORDS, (h["title"] + " " + h["content"]).lower())]
+
+    async def answer_external_release(self, q):
+        """Was there a browser/OS release or known breakage that could explain an engine-specific drop?"""
+
+        at = datetime.fromisoformat(q.params["at"]) if isinstance(q.params["at"], str) else q.params["at"]
+        engine = q.params.get("engine", "webkit")
+        names = {
+            "webkit": ["Safari", "iOS", "WebKit"],
+            "chromium": ["Chrome", "Chromium"],
+            "firefox": ["Firefox"],
+        }[engine]
+        w = Window(at - timedelta(days=3), at + timedelta(hours=12))
+        found, evs = [], []
+        for n in names[:2]:
+            b = await self.fetch("world_news", w, {"query": f"{n} update release bug"})
+            if b is None:
+                break
+            evs.append(b.id)
+            found += [
+                r
+                for r in b.frame.to_dicts()
+                if re.search(rf"\b{n.lower()}\b", (r["title"] + r["content"]).lower())
+                and re.search(r"update|release|bug|broke|regression", (r["title"] + r["content"]).lower())
+            ]
+        if not evs:
+            return Answer(
+                question_id=q.id,
+                detective=self.name,
+                verdict="cannot_determine",
+                text="Cannot search the news (no news source).",
+            )
+        if found:
+            f = await self.validated(
+                Finding(
+                    detective=self.name,
+                    kind="observed",
+                    evidence_ids=evs,
+                    claim=(f"Possible alternative: “{found[0]['title']}” was published around then."),
+                )
+            )
+            return Answer(
+                question_id=q.id, detective=self.name, text=f.claim, findings=[f], verdict="contradicts"
+            )
+        f = await self.validated(
+            Finding(
+                detective=self.name,
+                kind="observed",
+                evidence_ids=evs,
+                claim=(
+                    f"No {' or '.join(names[:2])} release or known breakage was reported in the three days before "
+                    f"{at:%a %b %d %H:%M} UTC, so a browser update does not explain it."
+                ),
+            )
+        )
+        return Answer(question_id=q.id, detective=self.name, text=f.claim, findings=[f], verdict="supports")
+
+    async def answer_external_event(self, q):
+        """Holiday or outage that could explain a drop in a segment around a time?"""
+
+        country = (q.params.get("segment") or {}).get("country")
+        at = datetime.fromisoformat(q.params["at"]) if isinstance(q.params["at"], str) else q.params["at"]
+        hol = await self.fetch(
+            "holidays",
+            Window(at - timedelta(days=1), at + timedelta(days=1)),
+            {"countries": [country]} if country else {},
+        )
+        if hol is None:
+            return Answer(
+                question_id=q.id, detective=self.name, verdict="cannot_determine", text="No holiday source."
+            )
+        rows = [h for h in hol.frame.to_dicts() if not country or h["country"] == country]
+        if rows:
+            h = rows[0]
+            f = await self.validated(
+                Finding(
+                    detective=self.name,
+                    kind="observed",
+                    evidence_ids=[hol.id],
+                    claim=(
+                        f"{h['name']} is a public holiday in {COUNTRY.get(h['country'], h['country'])} on that day."
+                    ),
+                )
+            )
+            return Answer(
+                question_id=q.id, detective=self.name, text=f.claim, findings=[f], verdict="supports"
+            )
+        return Answer(
+            question_id=q.id,
+            detective=self.name,
+            verdict="neutral",
+            text=f"No public holiday in {COUNTRY.get(country, country or 'the top countries')} around then.",
+        )
 
     def tools(self) -> list[Tool]:
         return []

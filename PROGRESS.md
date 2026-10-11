@@ -1,8 +1,7 @@
 # Progress
 
-Current stage: **Stage 9 — Lead detective, cross-examination, attribution and verdict** (Stages 1–3, 5 and 8
-built, with their remaining "done when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages
-4, 6 and 7 done).
+Current stage: **Stage 10 — The case board UI** (Stages 1–3, 5 and 8 built, with their remaining "done
+when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages 4, 6, 7 and 9 done).
 
 Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3, B4, B5, B11).
 
@@ -101,9 +100,19 @@ Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3
 - [x] All seven run concurrently (`engine/agents/team.py`); `tests/test_detectives.py` (6 worlds)
 - [ ] Live: Deploy detective finds the culprit through a real Nebius Job; Session Omni describes the failed taps
 
+## Stage 9 — Lead detective ✅ (deterministic; Ultra narrative path waits on B1)
+- [x] Opening brief: merge proposals into hypotheses with effect specs, mechanism vs timing evidence
+- [x] Cross-examination ≤ 3 rounds with structured questions answered by detectives with new evidence
+- [x] Code judgement (mechanism ∧ timing ∧ no contradiction); Shapley attribution with CIs + unexplained
+- [x] Verdict: ranked causes, how we know, rejected/inconclusive, not checked, actions (code PR, approval-gated
+      config, recommendation); special verdicts "no real drop" and "measurement problem"; Ultra narrative validated
+- [x] Done when: flagship names all three causes, explained shares 68.3/22.6/9.1 vs truth 68.7/21.8/9.5, no
+      false accusations; noise and weekend dip → no real drop; tracking bug → measurement; holiday red herring
+      → only the holiday (`tests/test_lead.py`)
+
 ## Last verification
 ```
-uv run pytest -q              → 66 passed
+uv run pytest -q              → 71 passed
 uv run ruff check .           → clean
 snippet: pnpm test/typecheck  → 10 passed, clean
 acme-demo: tsc + eslint       → clean

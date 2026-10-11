@@ -89,6 +89,7 @@ async def run_detectives(
     classes = detective_classes()
     names = names or list(classes)
     team = [classes[n](ctx) for n in names]
+    ctx.team = {d.name: d for d in team}  # type: ignore[attr-defined]  # the lead cross-examines these
     results = await asyncio.gather(*(d.run() for d in team), return_exceptions=True)
     reports: dict[str, DetectiveReport] = {}
     for d, r in zip(team, results, strict=True):

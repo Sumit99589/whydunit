@@ -98,6 +98,8 @@ class Question(BaseModel):
     id: str = Field(default_factory=lambda: new_id("q"))
     to: str
     text: str
+    kind: str = "free"  # structured check: before_after, external_release, deploy_around, ...
+    params: dict[str, Any] = Field(default_factory=dict)
     about_hypothesis: str | None = None
     round: int = 1
 

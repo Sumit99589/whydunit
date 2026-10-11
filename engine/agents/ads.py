@@ -132,6 +132,7 @@ class AdsDetective(Detective):
                 refs,
                 confidence=0.95,
             )
+            self.cut = cut
             self.propose(
                 f"The “{cut['campaign_name']}” budget cut capped paid traffic",
                 "traffic",
@@ -148,6 +149,29 @@ class AdsDetective(Detective):
                 kind="inference",
                 confidence=0.7,
             )
+
+    async def answer_ads_change_around(self, q):
+        from datetime import datetime, timedelta
+
+        from engine.runtime.schemas import Answer
+
+        at = datetime.fromisoformat(q.params["at"]) if isinstance(q.params["at"], str) else q.params["at"]
+        cut = getattr(self, "cut", None)
+        if cut is None:
+            return Answer(
+                question_id=q.id,
+                detective=self.name,
+                verdict="contradicts",
+                text="No budget cut or pause in the ad account around then.",
+            )
+        near = abs(cut["ts"] - at) <= timedelta(hours=12)
+        return Answer(
+            question_id=q.id,
+            detective=self.name,
+            verdict="supports" if near else "neutral",
+            findings=[f for f in self.findings if f.status == "accepted"][:1],
+            text=f"The “{cut['campaign_name']}” budget was cut at {cut['ts']:%a %H:%M} UTC.",
+        )
 
     def tools(self) -> list[Tool]:
         return []
