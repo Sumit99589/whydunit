@@ -75,7 +75,8 @@ async def real_session(
     try:
         await page.goto(f"{base_url}/?{urlencode(params)}", wait_until="networkidle", timeout=30000)
         await page.wait_for_timeout(rng.uniform(1500, 4000))
-        await page.mouse.wheel(0, rng.uniform(300, 900))
+        # mouse.wheel is unsupported in mobile WebKit; a smooth scroll records the same way in rrweb.
+        await page.evaluate("y => window.scrollBy({top: y, behavior: 'smooth'})", rng.uniform(300, 900))
         await page.wait_for_timeout(rng.uniform(800, 2500))
         if await page.get_by_role("button", name="Accept").is_visible():
             await page.get_by_role("button", name="Accept").click()
