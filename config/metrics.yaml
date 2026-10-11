@@ -1,0 +1,44 @@
+# Metric definitions (PLAN Stage 6). Counts come from funnel events; the funnel is monotone
+# (a session that reached a later step counts as having reached the earlier ones).
+headline: paid_subs
+metrics:
+  paid_subs:
+    label: New paid subscriptions
+    kind: count
+    event: payment_succeeded
+    unit: per day
+  signups:
+    label: Signups
+    kind: count
+    event: signup_completed
+    unit: per day
+  visitors:
+    label: Visitors
+    kind: count
+    event: session
+    unit: per day
+  signup_rate:
+    label: Signup rate
+    kind: rate
+    numerator: signed_up
+    denominator: visited
+  checkout_rate:
+    label: Checkout rate
+    kind: rate
+    numerator: checkout
+    denominator: signed_up
+  payment_success_rate:
+    label: Payment success rate
+    kind: rate
+    numerator: paid
+    denominator: checkout
+# paid_subs = traffic × signup_rate × checkout_rate × payment_success_rate
+funnel:
+  - {factor: traffic, step: visited, label: Visitors}
+  - {factor: signup_rate, step: signed_up, label: Signup rate}
+  - {factor: checkout_rate, step: checkout, label: Checkout rate}
+  - {factor: payment_success_rate, step: paid, label: Payment success rate}
+segment_dims: [engine, browser, os, device, country, channel]
+significance:
+  z_threshold: 2.5          # |z| above this (and the change below) is a real change
+  min_relative_change: 0.05

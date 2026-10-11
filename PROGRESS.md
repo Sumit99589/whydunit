@@ -1,7 +1,7 @@
 # Progress
 
-Current stage: **Stage 6 — Analysis toolkit** (Stages 1–3 and 5 built, with their remaining "done when"
-checks waiting on credentials in BLOCKERS.md per rule A7.3; Stage 4 done).
+Current stage: **Stage 7 — Agent runtime and the first detective** (Stages 1–3 and 5 built, with their
+remaining "done when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages 4 and 6 done).
 
 Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3, B4, B5, B11).
 
@@ -46,7 +46,7 @@ Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3
       payment_declines(country), public_holiday(country), dependency_outage(service), competitor_launch,
       tracking_bug, seasonality_only, noise_only, harmless_deploy, checkout_slow
 - [x] Exact Shapley ground truth over counterfactual worlds (common random numbers) — 3inc: Safari bug
-      65.4%, ads cap 28.8%, BR declines 5.8% of 146 lost paid subs
+      68.7%, ads cap 21.8%, BR declines 9.5%
 - [x] Presets in `config/worlds.yaml` (one per eval scenario); CLI `uv run whydunit world create`
 - [x] Done when: every preset generates in < 30 s (3inc with truth: ~7 s); `tests/test_world.py` asserts
       each incident's signal (10 tests)
@@ -65,9 +65,20 @@ Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3
       GITHUB_TOKEN; world_news: needs TAVILY_API_KEY), with real GitHub and Vercel status-page incidents
 - [ ] Live probe 11/11 once B3/B4/B8 land
 
+## Stage 6 — Analysis toolkit ✅
+- [x] `config/metrics.yaml`; `analysis/data.py` (session funnel table, derived `engine` dimension)
+- [x] `decompose.py`: LMDI funnel decomposition, exact to 1e-12
+- [x] `segments.py`: mix/rate drill-down per factor, two levels deep
+- [x] `changepoint.py`: seasonally matched real-vs-noise test; CUSUM change timing
+- [x] `shapley.py`: counterfactual restoration, exact Shapley, bootstrap CIs, unexplained share
+- [x] `sessions.py`: rage clicks, dead clicks, form abandonment, keyframe times; `bootstrap.py` helpers
+- [x] Done when: flagship shares within ±5 pp of truth (68.2/22.6/9.2 vs 68.7/21.8/9.5); factors and
+      segments recovered; noise and weekend dip judged "within normal variance"; CUSUM times all three
+      incidents within 1 h (`tests/test_analysis.py`, 12 tests)
+
 ## Last verification
 ```
-uv run pytest -q              → 42 passed
+uv run pytest -q              → 54 passed
 uv run ruff check .           → clean
 snippet: pnpm test/typecheck  → 10 passed, clean
 acme-demo: tsc + eslint       → clean

@@ -55,6 +55,7 @@ def simulate(
     budget_at: Callable[[datetime], float] | None = None,
     rng: np.random.Generator,
     enabled_at: Callable[[datetime], bool] | None = None,
+    demand_mult: Callable[[datetime], float] | None = None,
 ) -> list[HourStats]:
     """Simulate [start, end) for one campaign. `spent_before` is spend earlier on start's day.
 
@@ -74,6 +75,8 @@ def simulate(
         stats = HourStats(campaign.id, hour)
         span = (nxt - t).total_seconds()
         lam = campaign.demand_clicks_per_day * span / 86400.0 * HOURLY[t.hour] * WEEKDAY[t.weekday()]
+        if demand_mult is not None:
+            lam *= demand_mult(t)  # the same day-level market noise organic traffic sees
         n = int(rng.poisson(lam))
         offsets = np.sort(rng.uniform(0, span, n))
         cpcs = campaign.avg_cpc * rng.lognormal(0, 0.25, n)

@@ -261,7 +261,8 @@ async def tick(now: datetime | None = None, *, skip_browsers: bool = False) -> d
             health = await state.last_health() or {p: True for p in PROBES}
             summary["health"] = {"carried_over": health}
 
-        # 3. Simulated ad platform for the window.
+        # 3. Simulated ad platform for the window (same day-level demand noise as organic traffic).
+        model = WorldModel(organic_per_day=float(schedule.traffic.get("organic_per_day", 1900)), seed=seed)
         paid_clicks: list[tuple[datetime, str]] = []
         day_start = w_start.replace(hour=0, minute=0, second=0, microsecond=0)
         for c in await ads.campaigns():
@@ -269,7 +270,15 @@ async def tick(now: datetime | None = None, *, skip_browsers: bool = False) -> d
                 c.id, day_start, w_start.replace(minute=0, second=0, microsecond=0)
             )
             budget = ads.budget_fn(await ads.budget_timeline(c.id, day_start))
-            hours = simulate(c, w_start, w_end, spent_before=spent, budget_at=budget, rng=nprng)
+            hours = simulate(
+                c,
+                w_start,
+                w_end,
+                spent_before=spent,
+                budget_at=budget,
+                rng=nprng,
+                demand_mult=model.day_noise,
+            )
             await ads.record_hours(hours)
             paid_clicks += [(t, c.name) for h in hours for t in h.click_times]
         summary["paid_clicks"] = len(paid_clicks)
@@ -279,7 +288,6 @@ async def tick(now: datetime | None = None, *, skip_browsers: bool = False) -> d
         cond = Conditions(
             signup_ok={p: health.get(p, True) for p in PROBES}, decline_rate_by_country=declines
         )
-        model = WorldModel(organic_per_day=float(schedule.traffic.get("organic_per_day", 1900)), seed=seed)
         journeys = model.journeys(
             w_start, w_end, paid_clicks=paid_clicks, conditions=lambda t: cond, rng=nprng
         )

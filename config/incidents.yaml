@@ -52,9 +52,9 @@ incidents:
     at: 5d
     until: 9d                       # clears on its own if nobody mitigates it
     description: >
-      Issuer-side declines for cards from Brazil rise from about 3% to about 30%
+      Issuer-side declines for cards from Brazil rise from about 3% to about 45%
       (do_not_honor / generic_decline), so Brazilian checkouts fail more often.
     action:
       country: BR
-      decline_rate: 0.30
+      decline_rate: 0.45
     affects: {factor: payment_success_rate, segment: {country: BR}}

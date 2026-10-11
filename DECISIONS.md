@@ -100,3 +100,29 @@ Non-obvious choices and why. Items marked **revisit** are simplifications to com
 - **D29. Neon is not on Atlassian Statuspage** (neonstatus.com runs on status.io), so it is listed with
   no status feed and reported under "not checked" instead of being silently skipped.
 - **D30. All DB and DuckDB sessions use UTC**, so evidence timestamps never depend on the machine's zone.
+
+## Stage 6
+
+- **D31. Monotone funnel.** A session that reached a later step counts as having reached the earlier
+  ones, so the decomposition is always well defined. Raw event flags are kept beside it so a tracking
+  gap (downstream events without upstream ones) can still be detected as a measurement problem.
+- **D32. Decomposition is LMDI** (log-mean Divisia): contributions add up exactly to the total change
+  (checked to 1e-12 in tests), per day so baseline and window lengths can differ.
+- **D33. Segment mix effects are measured against the overall average rate**: (Δw)·(r̄_s − r̄). The naive
+  symmetric form (Δw)·r̄_s made any segment whose share moved look important (the US outranked Brazil on
+  payment success in the flagship). The terms still sum exactly to the factor's change.
+- **D34. Attribution = counterfactual restoration on an hourly grid + exact Shapley + parametric
+  bootstrap.** With nothing restored the model reproduces the actual window exactly. Downstream rates are
+  shrunk toward segment and window-wide pooled rates *only* where an upstream factor is restored. Without
+  that, tiny cells' noisy rates were multiplied by restored volumes and the Safari bug was overstated by
+  17 pp. Restored traffic is the baseline's same hours scaled by the unaffected traffic trend. Result on
+  the flagship: 68.2 / 22.6 / 9.2 % vs exact truth 68.7 / 21.8 / 9.5 %.
+- **D35. Ad demand gets the same day-level market noise as organic traffic** (world model). The traffic
+  trend adjustment assumes channels share market-level swings; the world now does too.
+- **D36. Brazil decline incident raised to 45% (from a 3% baseline) and, in fixtures, starts the afternoon
+  of the Safari-bug day.** At 18% or 30% the true share was 2–4% of the drop, below what CUSUM can time at
+  ~2 Brazilian checkouts per hour. At 45% it is ~9.5%: a real, smaller, third cause. The live simulator
+  uses the same rate. Supersedes D19's numbers.
+- **D37. "Real drop vs normal variance"** compares the window with the same weekdays in prior weeks and
+  an overdispersed Poisson variance estimated from history (|z| ≥ 2.5 and ≥ 5% change). A weekend dip
+  against preceding weekdays is therefore reported as seasonal.

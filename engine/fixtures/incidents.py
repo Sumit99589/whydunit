@@ -52,7 +52,7 @@ class Incident:
             for probe in ENGINE_PROBES[p.get("arg", "webkit")]:
                 c.signup_ok[probe] = False
         elif k == "payment_declines":
-            c.decline_rate_by_country[p.get("arg", "BR")] = float(p.get("rate", 0.30))
+            c.decline_rate_by_country[p.get("arg", "BR")] = float(p.get("rate", 0.45))
         elif k == "public_holiday":
             if t.date() == self.start.date():
                 c.country_traffic_mult[p.get("arg", "DE")] = float(p.get("traffic", 0.35))
@@ -95,7 +95,7 @@ class Incident:
 DEFAULTS: dict[str, dict[str, Any]] = {
     "deploy_bug": {"arg": "webkit"},
     "ads_budget_cap": {"campaign": "1002", "budget": 150.0},
-    "payment_declines": {"arg": "BR", "rate": 0.30},
+    "payment_declines": {"arg": "BR", "rate": 0.45},
     "public_holiday": {"arg": "DE", "traffic": 0.35},
     "dependency_outage": {"arg": "stripe", "hours": 6, "error_rate": 0.6},
     "competitor_launch": {"arg": FIXTURE_COMPETITOR, "signup_mult": 0.82},
@@ -122,9 +122,9 @@ def parse_incidents(spec: str, world_start: datetime, days: int) -> list[Inciden
     default_offsets = {
         "deploy_bug": timedelta(days=days - 4, hours=10),
         "ads_budget_cap": timedelta(days=days - 4, hours=21),
-        "payment_declines": timedelta(days=days - 3, hours=8),
+        "payment_declines": timedelta(days=days - 4, hours=14),
         "public_holiday": timedelta(days=days - 2),
-        "dependency_outage": timedelta(days=days - 2, hours=13),
+        "dependency_outage": timedelta(days=days - 3, hours=13),
         "competitor_launch": timedelta(days=days - 4, hours=14),
         "tracking_bug": timedelta(days=days - 3, hours=11),
         "harmless_deploy": timedelta(days=days - 2, hours=9, minutes=30),

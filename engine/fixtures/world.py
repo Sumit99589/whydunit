@@ -35,7 +35,7 @@ from engine.settings import ROOT, load_config
 from engine.world.model import PROBES, Journey, WorldModel
 from simulator import voice
 
-GENERATOR_VERSION = 1
+GENERATOR_VERSION = 5
 DATA = Path(__file__).parent / "data"
 WORLDS_DIR = ROOT / ".cache" / "worlds"
 ACME_BASE = "https://acme-notes.vercel.app"
@@ -133,6 +133,7 @@ def simulate_days(
                 spent_before=0.0,
                 budget_at=_budget_fn(c, incidents),
                 rng=_day_rng(spec.seed, d, f"ads:{c.id}"),
+                demand_mult=model.day_noise,
             )
             hours += hs
             clicks += [(t, c.name) for h in hs for t in h.click_times]
