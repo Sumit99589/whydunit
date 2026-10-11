@@ -78,3 +78,25 @@ Non-obvious choices and why. Items marked **revisit** are simplifications to com
   (**revisit**).
 - **D22. pytest temp dirs live in `.cache/pytest`**: `/tmp` is RAM-backed here and fixture worlds are
   ~10 MB each.
+
+## Stage 5
+
+- **D23. Each kind has a fixed column schema** (`KIND_SCHEMAS`); `make_bundle` rejects a connector that
+  omits a column. Detectives and analysis therefore never care which tier supplied the data.
+- **D24. Tier confidence weights**: API 1.0, warehouse 0.95, CSV 0.85, public web 0.7, screen reading 0.6,
+  human upload 0.8. The lead multiplies finding confidence by these.
+- **D25. Registry falls down the ladder on errors too**, not just on unavailability, and records each
+  step in the bundle's `notes`. When nothing can supply a kind it raises `NoSource` listing what was
+  tried; detectives turn that into `cannot_determine` and the verdict's "not checked" list.
+- **D26. Acme's `payment_attempts` table is a tier-2 source for `payments`**, so the Payments detective
+  still works before Stripe is connected (and in no-key local runs). It is honestly labelled tier 2.
+- **D27. Acme's checkout charges a PaymentIntent for the first month**, then starts the subscription from
+  the saved card. Charging through a confirmed PaymentIntent records decline codes on the intent and its
+  charge (attaching a decline card first can fail before any charge exists). Stripe API version in use:
+  `2026-09-30.endive` (field `allowed_payment_method_types`).
+- **D28. Tests mock HTTP with respx and fake SDK clients instead of vcrpy cassettes for now**, because
+  cassettes need real keys. Recording real cassettes for Tavily, Stripe, Vercel and GitHub happens as keys
+  arrive (B1, B3, B4, B7, B8), for the Stage 13 eval harness (**revisit**).
+- **D29. Neon is not on Atlassian Statuspage** (neonstatus.com runs on status.io), so it is listed with
+  no status feed and reported under "not checked" instead of being silently skipped.
+- **D30. All DB and DuckDB sessions use UTC**, so evidence timestamps never depend on the machine's zone.

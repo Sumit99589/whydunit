@@ -43,6 +43,11 @@ def sqlalchemy_url(url: str | None = None) -> str:
     return (url or database_url()).replace("postgresql://", "postgresql+psycopg://", 1)
 
 
+async def _configure(conn: Any) -> None:
+    # Timestamps come back in UTC whatever the server's default zone is.
+    await conn.execute("SET TIME ZONE 'UTC'")
+
+
 async def get_pool() -> AsyncConnectionPool:
     global _pool
     if _pool is None:
@@ -52,6 +57,7 @@ async def get_pool() -> AsyncConnectionPool:
             max_size=int(env("DB_POOL_MAX", "8")),
             open=False,
             kwargs={"autocommit": True, "row_factory": dict_row},
+            configure=_configure,
         )
         await _pool.open()
     return _pool

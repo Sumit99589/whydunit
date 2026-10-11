@@ -15,5 +15,5 @@ dependencies:
   - name: Stripe
     statuspage: null   # Stripe does not use Atlassian Statuspage; checked via Tavily instead
   - name: Neon
-    statuspage: https://neonstatus.com
+    statuspage: null   # neonstatus.com runs on status.io, not Atlassian Statuspage JSON; checked via Tavily
 headline_metric: paid_subs

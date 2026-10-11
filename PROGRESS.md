@@ -1,6 +1,6 @@
 # Progress
 
-Current stage: **Stage 5 — Evidence layer and connectors** (Stages 1–3 built, with their "done when"
+Current stage: **Stage 6 — Analysis toolkit** (Stages 1–3 and 5 built, with their remaining "done when"
 checks waiting on credentials in BLOCKERS.md per rule A7.3; Stage 4 done).
 
 Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3, B4, B5, B11).
@@ -51,9 +51,23 @@ Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3
 - [x] Done when: every preset generates in < 30 s (3inc with truth: ~7 s); `tests/test_world.py` asserts
       each incident's signal (10 tests)
 
+## Stage 5 — Evidence layer and connectors
+- [x] `engine/connectors/base.py`: Connector protocol, `EvidenceBundle` (id, kind, connector, tier,
+      query, window, data_ref, summary, artifacts, fetched_at, sample, notes, frame), per-kind schemas, tier
+      confidence; `registry.py` resolves best available per kind, falls down the ladder on errors, `NoSource`
+- [x] Tier 1: WhydunitEvents, Replays (+ `recording()`), Vercel, GitHub (+ `compare()`, `pulls()`),
+      Stripe (test-mode only), MockAds (in-process or HTTP; respects no-API mode), Helpdesk, Reviews,
+      Tavily (+ `extract()`), Holidays (Nager.Date + bundled India), StatusPages; GoogleAds documented stub;
+      tier 2 AcmePaymentLog
+- [x] Fixture mode: `FixtureWorld` serves every kind plus `compare`, `flow_results`, `recording`
+- [x] `tests/test_connectors.py` (12 tests, HTTP mocked); `scripts/evidence_probe.py`
+- [x] Probe on fixture:3inc → 11/11 kinds; probe on live (dev DB) → 9/11 (deploys: needs VERCEL_TOKEN or
+      GITHUB_TOKEN; world_news: needs TAVILY_API_KEY), with real GitHub and Vercel status-page incidents
+- [ ] Live probe 11/11 once B3/B4/B8 land
+
 ## Last verification
 ```
-uv run pytest -q              → 30 passed (43 s)
+uv run pytest -q              → 42 passed
 uv run ruff check .           → clean
 snippet: pnpm test/typecheck  → 10 passed, clean
 acme-demo: tsc + eslint       → clean
