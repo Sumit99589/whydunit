@@ -1,8 +1,7 @@
 # Progress
 
-Current stage: **Stage 15 — Hardening and revisits** (Stages 1–3, 5, 8, 11, 12 and 14 built, with their
-remaining "done when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages 4, 6, 7, 9, 10 and
-13 done).
+Current stage: **Stage 16 — Submission package** (Stages 1–3, 5, 8, 11, 12 and 14 built, with their remaining
+"done when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages 4, 6, 7, 9, 10, 13 and 15 done).
 
 Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3, B4, B5, B11).
 
@@ -153,6 +152,12 @@ Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3
 - [x] `/status` endpoint; `uptime.yml` daily check that opens an issue; simulator `traffic.scale`
 - [ ] Deployed: fresh browser, no credentials, replays the flagship and runs a playground case on the public URL;
       cost per playground case measured (needs B1 for a non-zero number)
+
+## Stage 15 — Hardening and revisits ✅ (credential-bound revisits remain: D21, D28, D69)
+- [x] Snippet recorder lazy-loaded (6 KB core); UI error states; detective fallback notes on the roster
+- [x] Rate limits on public endpoints; approval gates; no secrets to the client; checked uploads
+- [x] Performance: fixture cases ~2.5 s end to end; the live flagship should take well under 4 min, to be measured on B1
+- [x] README run instructions + `scripts/dev_up.sh`
 
 ## Last verification
 ```

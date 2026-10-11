@@ -22,6 +22,7 @@ export type Mode = { replay: false } | { replay: true; speed: number; run: numbe
 export function useCase(id: string, mode: Mode) {
   const [state, dispatch] = useReducer(reducer, id, emptyCase);
   const [connected, setConnected] = useReducerState(false);
+  const [problem, setProblem] = useReducerState<"not_found" | "unreachable" | null>(null);
   const esRef = useRef<EventSource | null>(null);
   const replayKey = mode.replay ? `${mode.speed}:${mode.run}` : "live";
 
@@ -45,9 +46,17 @@ export function useCase(id: string, mode: Mode) {
       open(`/engine/cases/${id}/stream?replay=1&speed=${mode.speed}`);
     } else {
       fetch(`/engine/cases/${id}/events`)
-        .then((r) => (r.ok ? r.json() : []))
-        .then((events: CaseEvent[]) => {
-          if (closed) return;
+        .then((r) => {
+          if (r.status === 404) {
+            setProblem("not_found");
+            return null;
+          }
+          if (!r.ok) throw new Error(String(r.status));
+          setProblem(null);
+          return r.json();
+        })
+        .then((events: CaseEvent[] | null) => {
+          if (closed || events === null) return;
           let last = 0;
           for (const e of events) {
             dispatch({ kind: "event", e });
@@ -56,7 +65,7 @@ export function useCase(id: string, mode: Mode) {
           const done = events.some((e) => e.type === "case_closed" || e.type === "case_failed");
           if (!done) open(`/engine/cases/${id}/stream?after=${last}`);
         })
-        .catch(() => open(`/engine/cases/${id}/stream`));
+        .catch(() => setProblem("unreachable"));
     }
     return () => {
       closed = true;
@@ -66,7 +75,7 @@ export function useCase(id: string, mode: Mode) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, replayKey]);
 
-  return { state, connected };
+  return { state, connected, problem };
 }
 
 function useReducerState<T>(initial: T): [T, (v: T) => void] {

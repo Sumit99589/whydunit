@@ -294,3 +294,16 @@ Non-obvious choices and why. Items marked **revisit** are simplifications to com
   search) when a key is configured. Everything else in a fixture world stays deterministic, so eval
   results and the playground agree.
 - **D73. The simulator has a `traffic.scale` knob** to turn the world down after recording the video.
+
+## Stage 15
+
+- **D74. Revisits.** D12 done: the snippet core is 6 KB and the 75 KB rrweb recorder loads only for sampled
+  sessions (`whydunit-record.js`). Still open, because they need credentials: D21 (permanent Acme deployments
+  for fixture flows), D28 (real HTTP cassettes) and D69 (LLM-mode eval run).
+- **D75. Error states.** The case board explains a missing case, an unreachable engine (with links to the
+  case list and the replay), a stopped investigation (findings so far stay visible), and metric history
+  that could not load. The roster shows when a detective fell back to computed findings (model unavailable
+  or over budget), and detective crashes show as errors without sinking the case.
+- **D76. Public endpoints are rate-limited per IP**: new cases 3/h, CSV uploads 5/h with a 5 MB cap,
+  connection tests 10/h. Admin-key requests are exempt. All writes that change the world need the admin
+  key. Secrets never reach the client: `/status` reports only booleans and model IDs.

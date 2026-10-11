@@ -4,8 +4,9 @@
 //   <script>whydunit.init({ key: "wd_…", endpoint: "/api/wd" })</script>
 //   whydunit.track("signup_started", { plan: "pro" })
 
-import { record } from "@rrweb/record";
 import { attributionFrom, channelOf, parseUA, uid, type Attribution } from "./context";
+
+type RecordFn = (opts: Record<string, unknown>) => (() => void) | undefined;
 
 export interface InitOptions {
   key: string;
@@ -13,6 +14,8 @@ export interface InitOptions {
   endpoint?: string;
   /** Share of sessions recorded with rrweb, 0..1. Default 0.1. */
   replaySampleRate?: number;
+  /** URL of the recorder script, loaded only for sampled sessions. Default: next to this script. */
+  recorderUrl?: string;
   /** Marks all data from this browser as synthetic (simulator traffic). */
   synthetic?: boolean;
   /** Simulated country; only sent for synthetic traffic. */
@@ -193,10 +196,30 @@ export function identify(id: string): void {
   store("local")?.setItem("wd_user", id);
 }
 
+let loading = false;
+
 function startReplay() {
-  if (stopRecording) return;
-  stopRecording = record({
-    emit(event) {
+  if (stopRecording || loading) return;
+  const w = window as unknown as { __whydunitRecord?: RecordFn };
+  if (!w.__whydunitRecord) {
+    // Only sampled sessions pay for the recorder (~75 KB): inject it, then start.
+    loading = true;
+    const tag = document.createElement("script");
+    tag.src = opts.recorderUrl;
+    tag.async = true;
+    tag.onload = () => {
+      loading = false;
+      startReplay();
+    };
+    tag.onerror = () => {
+      loading = false;
+      log("recorder failed to load");
+    };
+    document.head.appendChild(tag);
+    return;
+  }
+  stopRecording = w.__whydunitRecord({
+    emit(event: unknown) {
       replayBuf.push(event);
       if (replayBuf.length >= 300) flushReplay();
     },
@@ -205,6 +228,12 @@ function startReplay() {
     sampling: { mousemove: 100, scroll: 150, input: "last" },
   });
   log("recording session");
+}
+
+function defaultRecorderUrl(): string {
+  const me = document.currentScript as HTMLScriptElement | null;
+  const src = me?.src || Array.from(document.scripts).map((x) => x.src).find((x) => /whydunit(\.min)?\.js/.test(x)) || "/whydunit.js";
+  return src.replace(/whydunit(\.min)?\.js(\?.*)?$/, "whydunit-record.js");
 }
 
 function hookHistory() {
@@ -231,6 +260,7 @@ export function init(options: InitOptions): void {
     synthetic: false,
     autoPageview: true,
     debug: false,
+    recorderUrl: defaultRecorderUrl(),
     ...options,
   };
   started = true;

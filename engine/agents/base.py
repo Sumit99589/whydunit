@@ -259,6 +259,7 @@ class Detective:
             checked=self.checked,
             cost_usd=round(self.ctx.meter.cost_usd - cost0, 6),
             model_mode=mode,  # type: ignore[arg-type]
+            notes=self.notes,
         )
         for h in self.hypotheses:
             await ev.save_hypothesis(self.ctx.case.id, h)

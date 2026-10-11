@@ -92,6 +92,7 @@ class DetectiveReport(BaseModel):
     checked: list[str] = Field(default_factory=list)
     cost_usd: float = 0.0
     model_mode: Literal["llm", "deterministic"] = "deterministic"
+    notes: list[str] = Field(default_factory=list)
 
 
 class Question(BaseModel):

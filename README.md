@@ -47,16 +47,32 @@ Single-cause scenarios have a share error of 0 by construction; the flagship (S4
 
 ## Run it locally (no keys needed)
 
+Requirements: Python 3.12 with [uv](https://docs.astral.sh/uv/), Node 22 with pnpm.
+
 ```bash
-uv sync                                   # Python 3.12 engine (embedded Postgres for development)
-uv run whydunit db upgrade
-uv run whydunit case open --world fixture:3inc     # watch a case in the terminal
-uv run whydunit serve                     # engine on :8000
+./scripts/dev_up.sh                       # embedded Postgres, migrations, fixture worlds, a first case
+uv run whydunit serve                     # engine API on :8000
 cd ui && pnpm install && pnpm dev         # case board on :3000 (proxies /engine to :8000)
 ```
 
-With `NEBIUS_API_KEY` set, detectives use Nemotron on Token Factory; without it they run their deterministic
-playbooks. See `.env.example` for the live-world integrations.
+Then open http://localhost:3000/playground and pick a world, or http://localhost:3000/cases/flagship?replay=4.
+
+Useful commands:
+
+```bash
+uv run whydunit case open --world fixture:3inc     # investigate in the terminal
+uv run whydunit evals run                          # the ten scenarios
+uv run whydunit world create --incidents deploy_bug:webkit,ads_budget_cap --start 2026-09-14 --days 14
+uv run pytest                                      # engine tests (81)
+```
+
+**Models.** With `NEBIUS_API_KEY` set (see `.env.example`), detectives use Nemotron on Token Factory: run
+`uv run python scripts/discover_models.py --write` once to pin the model IDs, then `uv run python scripts/smoke_llm.py`.
+Without a key, each detective runs its deterministic playbook and the board says so.
+
+**The live world.** Acme Notes (`acme-demo`), the simulator, the watcher and the browser runner need GitHub, Vercel,
+Neon, Stripe test mode, an S3 bucket and a Nebius AI Cloud project; `BLOCKERS.md` lists each step and
+`docs/hosting.md` the judge deployment.
 
 ## Repository
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from fastapi import APIRouter, File, Form, Header, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, Header, HTTPException, Request, UploadFile
 from pydantic import BaseModel
 
 from engine import db
@@ -17,6 +17,25 @@ from engine.settings import env
 router = APIRouter(tags=["connect"])
 
 
+_hits: dict[tuple[str, str], list[float]] = {}
+PUBLIC_UPLOAD_BYTES = 5 * 1024 * 1024
+
+
+def limit(request: Request, bucket: str, per_hour: int, admin_key: str | None = None) -> None:
+    """Per-IP hourly limit for public endpoints that cost money or storage (admins exempt)."""
+    import time as _t
+
+    if env("WHYDUNIT_ADMIN_KEY") and admin_key == env("WHYDUNIT_ADMIN_KEY"):
+        return
+    fwd = request.headers.get("x-forwarded-for")
+    ip = fwd.split(",")[0].strip() if fwd else (request.client.host if request.client else "?")
+    now = _t.time()
+    hits = [t for t in _hits.get((bucket, ip), []) if now - t < 3600]
+    if len(hits) >= per_hour:
+        raise HTTPException(429, f"Too many requests; try again within the hour (limit {per_hour} per hour).")
+    _hits[(bucket, ip)] = hits + [now]
+
+
 def _admin(key: str | None) -> None:
     expected = env("WHYDUNIT_ADMIN_KEY")
     if expected and key != expected:
@@ -25,11 +44,20 @@ def _admin(key: str | None) -> None:
 
 @router.post("/uploads")
 async def upload(
-    kind: str = Form(...), file: UploadFile = File(...), case_id: str | None = Form(None)
+    request: Request,
+    kind: str = Form(...),
+    file: UploadFile = File(...),
+    case_id: str | None = Form(None),
+    x_admin_key: str | None = Header(default=None),
 ) -> dict[str, Any]:
     if kind not in KINDS:
         raise HTTPException(422, f"kind must be one of {', '.join(KINDS)}")
-    data = await file.read(MAX_BYTES + 1)
+    limit(request, "upload", 5, x_admin_key)
+    is_admin = bool(env("WHYDUNIT_ADMIN_KEY")) and x_admin_key == env("WHYDUNIT_ADMIN_KEY")
+    cap = MAX_BYTES if is_admin or not env("WHYDUNIT_ADMIN_KEY") else PUBLIC_UPLOAD_BYTES
+    data = await file.read(cap + 1)
+    if len(data) > cap:
+        raise HTTPException(413, f"file too large ({cap // (1024 * 1024)} MB max)")
     try:
         return await ingest_upload(kind, file.filename or "upload.csv", data, case_id)
     except ValueError as e:
@@ -74,9 +102,12 @@ class Test(BaseModel):
 
 
 @router.post("/connect/test")
-async def test_connection(body: Test) -> dict[str, Any]:
+async def test_connection(
+    body: Test, request: Request, x_admin_key: str | None = Header(default=None)
+) -> dict[str, Any]:
     if body.kind not in KINDS:
         raise HTTPException(422, "unknown kind")
+    limit(request, "connect_test", 10, x_admin_key)
     now = datetime.now(UTC)
     filters = {"query": "Acme Notes"} if body.kind == "world_news" else {}
     try:

@@ -35,6 +35,7 @@ export function Roster({ s, focus, onFocus }: { s: CaseState; focus: string | nu
               {d.suspicions > 0 && <span className="text-fail">{d.suspicions} rejected</span>}
               {d.cannot > 0 && <span>{d.cannot} not checked</span>}
               {d.mode === "llm" && <span>Nemotron</span>}
+              {d.note && <span className="w-full text-ink-3" title={d.note}>{d.note.startsWith("model") ? "Model unavailable: used computed findings" : d.note.slice(0, 60)}</span>}
             </div>
           </button>
         );

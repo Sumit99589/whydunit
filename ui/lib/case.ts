@@ -84,6 +84,7 @@ export interface DetectiveState {
   cannot: number;
   seconds?: number;
   mode?: string;
+  note?: string;
 }
 
 export interface Attribution {
@@ -244,6 +245,7 @@ export function reduce(s: CaseState, e: CaseEvent): CaseState {
         current: p.report.summary,
         seconds: p.seconds,
         mode: p.report.model_mode,
+        note: (p.report.notes ?? [])[0],
         cannot: p.report.cannot_determine.length,
       });
     case "detective_error":
