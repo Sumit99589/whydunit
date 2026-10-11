@@ -23,3 +23,32 @@ Non-obvious choices and why. Items marked **revisit** are simplifications to com
 - **D7. Role fallbacks** (`ultra → super`) live in config and in `LLM.resolve_role`, per risk register C3.
 - **D8. Docker is actually installed on this machine**, but PLAN A4/A7.6 say images are built in GitHub
   Actions. Following the plan: no local image builds (memory).
+
+## Stage 2
+
+- **D9. Acme proxies snippet uploads** through its own `/api/wd/*` route on Vercel. Events then arrive
+  first-party (no CORS, fewer ad-blocker losses) and the proxy forwards Vercel's `x-vercel-ip-country` as
+  `x-whydunit-country`. Simulator traffic keeps its simulated country (the GitHub runner is in the US).
+- **D10. Stripe stays test-mode by construction**: Acme refuses to start with a non-test key. Without a
+  key, checkout uses a mock with the same interface and the same outcome for each test PaymentMethod, and
+  every attempt is recorded in `acme.payment_attempts` either way.
+- **D11. Acme's tables live in an `acme` schema** in the shared Postgres, created by Whydunit's first
+  migration and mirrored in `acme-demo/db/schema.sql` (idempotent), so either repo can bootstrap them.
+- **D12. Snippet bundle is 80 KB minified** because rrweb's recorder is bundled in. Acceptable for a demo;
+  revisit lazy-loading the recorder only for sampled sessions (**revisit**).
+
+## Stage 3
+
+- **D13. The simulated ad platform is branded "AdPilot"** in its dashboard, with a "SIMULATED" banner,
+  and its API is Google-Ads-shaped. No Google trademarks appear in UI or video.
+- **D14. One world model** (`engine/world/model.py`) drives both the live simulator and the fixture
+  worlds, so the two never disagree about funnel rates or segment mix.
+- **D15. Planted code bug = `requestIdleCallback` with no fallback.** CI probe on 2026-10-11
+  (`browser-features` workflow): `requestIdleCallback` is `undefined` in Playwright WebKit 26.6 (desktop
+  and iPhone 15) and a function in Chromium 153 (desktop and Pixel 7) and Firefox 155. The refactor
+  (branch `refactor/signup-idle-hydration` in acme-demo) only enables submit once an idle callback fires,
+  so on WebKit the Create account button silently does nothing: dead clicks, then rage clicks. Every iOS
+  browser is WebKit, so iPhone Chrome users are hit too.
+- **D16. Incident messages are emergent**: support tickets and reviews about the incidents come from a
+  share of the visitors whose signup was actually blocked or whose card was actually declined, not from a
+  script.

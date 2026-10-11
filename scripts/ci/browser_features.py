@@ -20,8 +20,13 @@ CHECKS = {
 
 async def main() -> None:
     async with async_playwright() as p:
-        matrix = [("chromium", None), ("webkit", None), ("webkit", "iPhone 15"), ("chromium", "Pixel 7"),
-                  ("firefox", None)]
+        matrix = [
+            ("chromium", None),
+            ("webkit", None),
+            ("webkit", "iPhone 15"),
+            ("chromium", "Pixel 7"),
+            ("firefox", None),
+        ]
         for name, device in matrix:
             browser = await getattr(p, name).launch()
             ctx = await browser.new_context(**(p.devices[device] if device else {}))

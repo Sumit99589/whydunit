@@ -112,7 +112,7 @@ async def spent_on_day(campaign_id: str, day_start: datetime, before: datetime) 
            WHERE campaign_id = %s AND hour >= %s AND hour < %s""",
         (campaign_id, day_start, before),
     )
-    return row["c"] / MICROS
+    return float(row["c"]) / MICROS
 
 
 async def record_hours(stats: list[HourStats]) -> None:

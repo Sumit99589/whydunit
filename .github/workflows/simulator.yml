@@ -1,0 +1,77 @@
+name: simulator
+
+# The live world simulator (PLAN Stage 3). Every 15 minutes it advances the Acme world from the last
+# tick to now, touching real systems. It stays idle until its secrets are configured (BLOCKERS.md).
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      skip_browsers:
+        description: "Skip Playwright probes and sessions"
+        type: boolean
+        default: false
+
+concurrency:
+  group: simulator
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      WHYDUNIT_ENGINE_URL: ${{ secrets.WHYDUNIT_ENGINE_URL }}
+      WHYDUNIT_INGEST_KEY: ${{ secrets.WHYDUNIT_INGEST_KEY }}
+      WHYDUNIT_ADMIN_KEY: ${{ secrets.WHYDUNIT_ADMIN_KEY }}
+      ACME_URL: ${{ secrets.ACME_URL }}
+      ACME_REPO: ${{ vars.ACME_REPO || 'Sumit99589/acme-demo' }}
+      ACME_GITHUB_TOKEN: ${{ secrets.ACME_GITHUB_TOKEN }}
+      NEBIUS_API_KEY: ${{ secrets.NEBIUS_API_KEY }}
+    steps:
+      - name: Check configuration
+        id: cfg
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$WHYDUNIT_INGEST_KEY" ] || [ -z "$ACME_URL" ]; then
+            echo "::notice::Simulator not configured yet (needs DATABASE_URL, WHYDUNIT_INGEST_KEY, ACME_URL secrets). Skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.cfg.outputs.ready == 'true'
+      - uses: astral-sh/setup-uv@v6
+        if: steps.cfg.outputs.ready == 'true'
+        with:
+          enable-cache: true
+      - if: steps.cfg.outputs.ready == 'true'
+        run: uv sync --frozen
+      - name: Cache Playwright browsers
+        if: steps.cfg.outputs.ready == 'true' && inputs.skip_browsers != true
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ hashFiles('uv.lock') }}
+      - name: Install browsers
+        if: steps.cfg.outputs.ready == 'true' && inputs.skip_browsers != true
+        run: uv run playwright install --with-deps chromium webkit firefox
+      - name: Migrate
+        if: steps.cfg.outputs.ready == 'true'
+        run: uv run whydunit db upgrade
+      - name: Tick
+        if: steps.cfg.outputs.ready == 'true'
+        run: uv run python -m simulator.tick ${{ inputs.skip_browsers == true && '--skip-browsers' || '' }}
+      - name: Record ground truth when it changes
+        if: steps.cfg.outputs.ready == 'true'
+        run: |
+          if ! git diff --quiet -- simulator/ground_truth.json 2>/dev/null || [ -n "$(git status --porcelain simulator/ground_truth.json)" ]; then
+            git config user.name "whydunit-simulator"
+            git config user.email "whydunit-simulator@users.noreply.github.com"
+            git add simulator/ground_truth.json
+            git commit -m "chore(sim): update ground truth"
+            git pull --rebase -q && git push -q
+          fi

@@ -1,0 +1,60 @@
+# Live simulator incident schedule (PLAN Stage 3). Offsets are from the simulator start time, which is
+# recorded once in sim.state['start'] on the first tick (and in PROGRESS.md).
+#
+# Each incident's real-world effect is produced by changing a real system, not by editing data:
+#   deploy_bug        -> merges a prepared branch into acme-demo/main (Vercel deploys it)
+#   ads_budget_cap    -> a "teammate" lowers a campaign budget on the simulated ad platform
+#   payment_declines  -> a share of one country's card payments use Stripe decline test cards
+
+tick_minutes: 15
+max_tick_window_hours: 3        # if ticks were skipped, back-fill at most this much
+
+traffic:
+  organic_per_day: 1900
+  real_sessions_per_tick: [2, 4] # real Playwright sessions with rrweb recording
+  replay_country_mix: [US, GB, IN, DE, BR, CA, FR]
+
+voice:
+  background_tickets_per_day: 6
+  background_reviews_per_day: 2
+  ticket_prob_blocked_signup: 0.05   # share of blocked signups who write to support
+  ticket_prob_declined: 0.10
+  review_prob_blocked_signup: 0.01
+
+incidents:
+  - id: safari_signup_bug
+    type: deploy_bug
+    at: 4d
+    description: >
+      A refactor of the signup form defers enabling the submit button until the browser is idle via
+      requestIdleCallback, with no fallback. WebKit lacks the API, so on Safari (and every iOS
+      browser) the Create account button silently does nothing.
+    action:
+      merge_branch: refactor/signup-idle-hydration
+      pr_title: "refactor(signup): defer form hydration until idle"
+    affects: {factor: signup_rate, segment: {engine: webkit}}
+
+  - id: ads_budget_cap
+    type: ads_budget_cap
+    at: 4d12h
+    description: >
+      A teammate lowers the daily budget of the main search campaign from $400 to $150. It now runs
+      out around midday every day and paid traffic falls in the afternoon.
+    action:
+      campaign_id: "1002"
+      new_daily_budget: 150
+      user_email: jordan@acme-notes.test
+      client_type: GOOGLE_ADS_WEB_CLIENT
+    affects: {factor: traffic, segment: {channel: paid}}
+
+  - id: payment_declines
+    type: payment_declines
+    at: 5d
+    until: 9d                       # clears on its own if nobody mitigates it
+    description: >
+      Issuer-side declines for cards from Brazil rise from about 3% to about 18%
+      (do_not_honor / generic_decline), so Brazilian checkouts fail more often.
+    action:
+      country: BR
+      decline_rate: 0.18
+    affects: {factor: payment_success_rate, segment: {country: BR}}
