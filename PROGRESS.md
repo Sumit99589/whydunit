@@ -1,7 +1,7 @@
 # Progress
 
-Current stage: **Stage 13 — Evaluation harness** (Stages 1–3, 5, 8, 11 and 12 built, with their remaining
-"done when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages 4, 6, 7, 9 and 10 done).
+Current stage: **Stage 14 — Hosting for judges** (Stages 1–3, 5, 8, 11 and 12 built, with their remaining
+"done when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages 4, 6, 7, 9, 10 and 13 done).
 
 Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3, B4, B5, B11).
 
@@ -138,9 +138,16 @@ Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3
       confidence ≤ 0.6; a Stripe-style CSV export is mapped by rules and used as the tier-3 payments source
       (`tests/test_ladder.py`, 5 tests incl. the Omni path with a scripted vision backend)
 
+## Stage 13 — Evaluation harness ✅ (deterministic mode; LLM-mode rerun waits on B1)
+- [x] `engine/evals/run.py`, `uv run whydunit evals run`: ten scenarios S1–S10, results in
+      `engine/evals/results.json`, table in README, `/evals` page (`GET /evals`)
+- [x] Metrics: top-cause accuracy, share MAE, false-accusation rate, correct abstention, missed causes, time, cost
+- [x] Result: top cause 10/10, false accusations 0, share MAE 0.17 pp, abstention 2/2, ~2.5 s per case, $0
+- [x] Failures analysed in DECISIONS D69
+
 ## Last verification
 ```
-uv run pytest -q              → 79 passed
+uv run pytest -q              → 81 passed
 uv run ruff check .           → clean
 snippet: pnpm test/typecheck  → 10 passed, clean
 acme-demo: tsc + eslint       → clean

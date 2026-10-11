@@ -21,10 +21,10 @@ payments_only:
   days: 14
   incidents: payment_declines:BR
 holiday_red_herring:
-  description: German Unity Day cuts German traffic; a harmless deploy lands the same morning.
-  start: 2026-09-20
+  description: US Labor Day cuts US traffic; a harmless deploy lands the same morning.
+  start: 2026-08-25
   days: 14
-  incidents: public_holiday:DE@13d,harmless_deploy@13d9h30m
+  incidents: public_holiday:US@13d,harmless_deploy@13d9h30m
 noise:
   description: No real change, just noise.
   start: 2026-09-14

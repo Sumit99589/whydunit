@@ -43,6 +43,15 @@ def create_app() -> FastAPI:
         reg = live_registry()
         return {"kinds": await reg.overview(), "runner": await RunnerClient().describe()}
 
+    @app.get("/evals")
+    async def evals() -> dict:
+        """The published evaluation results (engine/evals/results.json)."""
+        import json
+
+        from engine.evals.run import RESULTS
+
+        return json.loads(RESULTS.read_text()) if RESULTS.exists() else {"summary": None, "scenarios": []}
+
     @app.get("/health")
     async def health() -> dict:
         row = await db.fetchrow("SELECT 1 AS ok")

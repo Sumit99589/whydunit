@@ -1,0 +1,294 @@
+{
+  "generated_at": "2026-10-11T09:13:39.231726+00:00",
+  "summary": {
+    "scenarios": 10,
+    "top_cause_accuracy": 1.0,
+    "top_cause_correct": 10,
+    "share_mae_pp": 0.17,
+    "false_accusations": 0,
+    "false_accusation_rate": 0.0,
+    "correct_abstention": "2/2",
+    "missed_causes": 0,
+    "mean_seconds": 2.47,
+    "mean_cost_usd": 0.0,
+    "model_mode": "deterministic"
+  },
+  "scenarios": [
+    {
+      "id": "S1",
+      "title": "Deploy bug only (Safari signup)",
+      "world": "deploy_only",
+      "case_id": "case_7f085fd2a936",
+      "seconds": 3.4,
+      "cost_usd": 0,
+      "model_mode": "deterministic",
+      "verdict_kind": "causes",
+      "expected_kind": "causes",
+      "kind_ok": true,
+      "top_cause_ok": true,
+      "causes": [
+        {
+          "statement": "Deployment 4233f4e broke signup on WebKit (Safari and every iOS browser)",
+          "share_of_explained": 1.0,
+          "matched": "deploy_bug:webkit"
+        }
+      ],
+      "false_accusations": [],
+      "missed": [],
+      "share_abs_errors_pp": [
+        0.0
+      ],
+      "truth": {
+        "deploy_bug:webkit": 1.0
+      }
+    },
+    {
+      "id": "S2",
+      "title": "Ads budget cap only",
+      "world": "ads_only",
+      "case_id": "case_0e54710e2acc",
+      "seconds": 1.92,
+      "cost_usd": 0,
+      "model_mode": "deterministic",
+      "verdict_kind": "causes",
+      "expected_kind": "causes",
+      "kind_ok": true,
+      "top_cause_ok": true,
+      "causes": [
+        {
+          "statement": "The \u201cSearch \u00b7 Generic\u201d budget cut capped paid traffic",
+          "share_of_explained": 1.0,
+          "matched": "ads_budget_cap"
+        }
+      ],
+      "false_accusations": [],
+      "missed": [],
+      "share_abs_errors_pp": [
+        0.0
+      ],
+      "truth": {
+        "ads_budget_cap": 1.0
+      }
+    },
+    {
+      "id": "S3",
+      "title": "Payment declines only (Brazil)",
+      "world": "payments_only",
+      "case_id": "case_83bc86079942",
+      "seconds": 2.2,
+      "cost_usd": 0,
+      "model_mode": "deterministic",
+      "verdict_kind": "causes",
+      "expected_kind": "causes",
+      "kind_ok": true,
+      "top_cause_ok": true,
+      "causes": [
+        {
+          "statement": "Card issuers in Brazil started declining payments",
+          "share_of_explained": 1.0,
+          "matched": "payment_declines:BR"
+        }
+      ],
+      "false_accusations": [],
+      "missed": [],
+      "share_abs_errors_pp": [
+        0.0
+      ],
+      "truth": {
+        "payment_declines:BR": 1.0
+      }
+    },
+    {
+      "id": "S4",
+      "title": "The flagship: all three causes",
+      "world": "3inc",
+      "case_id": "case_1d02b9c2a404",
+      "seconds": 3.83,
+      "cost_usd": 0,
+      "model_mode": "deterministic",
+      "verdict_kind": "causes",
+      "expected_kind": "causes",
+      "kind_ok": true,
+      "top_cause_ok": true,
+      "causes": [
+        {
+          "statement": "Deployment 4233f4e broke signup on WebKit (Safari and every iOS browser)",
+          "share_of_explained": 0.6827,
+          "matched": "deploy_bug:webkit"
+        },
+        {
+          "statement": "The \u201cSearch \u00b7 Generic\u201d budget cut capped paid traffic",
+          "share_of_explained": 0.2263,
+          "matched": "ads_budget_cap"
+        },
+        {
+          "statement": "Card issuers in Brazil started declining payments",
+          "share_of_explained": 0.091,
+          "matched": "payment_declines:BR"
+        }
+      ],
+      "false_accusations": [],
+      "missed": [],
+      "share_abs_errors_pp": [
+        0.44,
+        0.86,
+        0.42
+      ],
+      "truth": {
+        "deploy_bug:webkit": 0.6871,
+        "ads_budget_cap": 0.2177,
+        "payment_declines:BR": 0.0952
+      }
+    },
+    {
+      "id": "S5",
+      "title": "Public holiday, with a harmless deploy the same day",
+      "world": "holiday_red_herring",
+      "case_id": "case_de1e0c28653a",
+      "seconds": 2.4,
+      "cost_usd": 0,
+      "model_mode": "deterministic",
+      "verdict_kind": "causes",
+      "expected_kind": "causes",
+      "kind_ok": true,
+      "top_cause_ok": true,
+      "causes": [
+        {
+          "statement": "Labour Day in the US",
+          "share_of_explained": 1.0,
+          "matched": "public_holiday:US"
+        }
+      ],
+      "false_accusations": [],
+      "missed": [],
+      "share_abs_errors_pp": [
+        0.0
+      ],
+      "truth": {
+        "public_holiday:US": 1.0
+      }
+    },
+    {
+      "id": "S6",
+      "title": "Noise only: no real drop",
+      "world": "noise",
+      "case_id": "case_5d5f9c3d79cc",
+      "seconds": 1.59,
+      "cost_usd": 0,
+      "model_mode": "deterministic",
+      "verdict_kind": "no_real_drop",
+      "expected_kind": "no_real_drop",
+      "kind_ok": true,
+      "top_cause_ok": true,
+      "causes": [],
+      "false_accusations": [],
+      "missed": [],
+      "share_abs_errors_pp": [],
+      "truth": {}
+    },
+    {
+      "id": "S7",
+      "title": "Payments provider outage on a status page",
+      "world": "outage",
+      "case_id": "case_25cb08e5f389",
+      "seconds": 1.84,
+      "cost_usd": 0,
+      "model_mode": "deterministic",
+      "verdict_kind": "causes",
+      "expected_kind": "causes",
+      "kind_ok": true,
+      "top_cause_ok": true,
+      "causes": [
+        {
+          "statement": "Payment API errors during a provider or integration outage",
+          "share_of_explained": 1.0,
+          "matched": "dependency_outage:stripe"
+        }
+      ],
+      "false_accusations": [],
+      "missed": [],
+      "share_abs_errors_pp": [
+        0.0
+      ],
+      "truth": {
+        "dependency_outage:stripe": 1.0
+      }
+    },
+    {
+      "id": "S8",
+      "title": "Competitor launch found in the news",
+      "world": "competitor",
+      "case_id": "case_9174b413ecb3",
+      "seconds": 2.38,
+      "cost_usd": 0,
+      "model_mode": "deterministic",
+      "verdict_kind": "causes",
+      "expected_kind": "causes",
+      "kind_ok": true,
+      "top_cause_ok": true,
+      "causes": [
+        {
+          "statement": "External event: Quillboard launches a free tier for teams of up to 10",
+          "share_of_explained": 1.0,
+          "matched": "competitor_launch:Quillboard"
+        }
+      ],
+      "false_accusations": [],
+      "missed": [],
+      "share_abs_errors_pp": [
+        0.0
+      ],
+      "truth": {
+        "competitor_launch:Quillboard": 1.0
+      }
+    },
+    {
+      "id": "S9",
+      "title": "Tracking bug: a measurement problem",
+      "world": "tracking",
+      "case_id": "case_f503bca10324",
+      "seconds": 2.89,
+      "cost_usd": 0,
+      "model_mode": "deterministic",
+      "verdict_kind": "measurement",
+      "expected_kind": "measurement",
+      "kind_ok": true,
+      "top_cause_ok": true,
+      "causes": [],
+      "false_accusations": [],
+      "missed": [],
+      "share_abs_errors_pp": [],
+      "truth": {
+        "tracking_bug": 0.0
+      }
+    },
+    {
+      "id": "S10",
+      "title": "Weekend dip plus a small Firefox bug",
+      "world": "seasonality_small_bug",
+      "case_id": "case_d929e71bb854",
+      "seconds": 2.29,
+      "cost_usd": 0,
+      "model_mode": "deterministic",
+      "verdict_kind": "causes",
+      "expected_kind": "causes",
+      "kind_ok": true,
+      "top_cause_ok": true,
+      "causes": [
+        {
+          "statement": "Deployment ea603e8 broke signup on Firefox",
+          "share_of_explained": 1.0,
+          "matched": "deploy_bug:firefox"
+        }
+      ],
+      "false_accusations": [],
+      "missed": [],
+      "share_abs_errors_pp": [
+        0.0
+      ],
+      "truth": {
+        "deploy_bug:firefox": 1.0
+      }
+    }
+  ]
+}

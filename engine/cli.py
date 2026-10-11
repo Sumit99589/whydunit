@@ -184,6 +184,18 @@ def _fix_approve(args: argparse.Namespace) -> int:
     return 0
 
 
+def _evals(args: argparse.Namespace) -> int:
+    import logging
+
+    from engine.evals.run import main as run_evals
+    from engine.evals.run import table
+
+    logging.basicConfig(level=logging.WARNING)
+    out = asyncio.run(run_evals(args.only.split(",") if args.only else None))
+    print(table(out))
+    return 0
+
+
 def _serve(args: argparse.Namespace) -> int:
     import uvicorn
 
@@ -236,6 +248,11 @@ def build_parser() -> argparse.ArgumentParser:
     fa = fp.add_parser("approve", help="apply an approval-gated fix (merge PR / restore budget / mitigation)")
     fa.add_argument("fix_id")
     fa.set_defaults(func=_fix_approve)
+
+    ep = sub.add_parser("evals").add_subparsers(dest="evals_cmd", required=True)
+    er = ep.add_parser("run", help="run the evaluation scenarios and write engine/evals/results.json")
+    er.add_argument("--only", help="comma-separated scenario ids, e.g. S4,S5")
+    er.set_defaults(func=_evals)
 
     sp = sub.add_parser("serve")
     sp.add_argument("--host", default="127.0.0.1")

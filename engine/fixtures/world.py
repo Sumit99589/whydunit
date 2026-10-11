@@ -683,6 +683,7 @@ def generate(spec: WorldSpec, path: Path | None = None, *, ground_truth: bool = 
         "name": spec.name,
         "description": spec.description,
         "generator_version": GENERATOR_VERSION,
+        "spec_hash": spec_hash(spec),
         "start": spec.t0.isoformat(),
         "end": spec.t_end.isoformat(),
         "seed": spec.seed,
@@ -714,6 +715,17 @@ def generate(spec: WorldSpec, path: Path | None = None, *, ground_truth: bool = 
     return WorldResult(path, meta, time.monotonic() - t_start, counts)
 
 
+def spec_hash(spec: WorldSpec) -> str:
+    return _sid(
+        spec.start,
+        spec.days,
+        spec.incidents,
+        spec.seed,
+        spec.organic_per_day,
+        json.dumps(spec.case, sort_keys=True),
+    )[:16]
+
+
 def load_meta(path: Path) -> dict[str, Any]:
     with duckdb.connect(str(path), read_only=True) as con:
         return json.loads(con.execute("SELECT value FROM meta WHERE key = 'world'").fetchone()[0])
@@ -725,7 +737,12 @@ def resolve_world(ref: str) -> Path:
     path = WORLDS_DIR / f"{name}.duckdb"
     if path.exists():
         try:
-            if load_meta(path).get("generator_version") == GENERATOR_VERSION:
+            meta = load_meta(path)
+            try:
+                want = spec_hash(WorldSpec.preset(name))
+            except KeyError:  # an ad-hoc world (not a preset): keep it
+                want = meta.get("spec_hash")
+            if meta.get("generator_version") == GENERATOR_VERSION and meta.get("spec_hash") == want:
                 return path
         except Exception:  # noqa: BLE001 - regenerate on any read problem
             pass

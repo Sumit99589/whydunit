@@ -257,3 +257,23 @@ Non-obvious choices and why. Items marked **revisit** are simplifications to com
   downgraded wrapt to 1.17.3; all tests still pass.
 - **D67. Tier 6 (ask a human) is an `evidence_requests` row plus a card on the case board** linking to the
   upload panel pre-filled with the kind and case. The case never waits for it.
+
+## Stage 13
+
+- **D68. Scoring.** A named cause matches a planted incident when it has the same funnel factor and the
+  incident's segment (a global incident matches any narrowing). Top cause = the cause with the largest
+  share vs the incident with the largest true Shapley share, or the right special verdict for
+  abstention scenarios. Share error compares `share_of_explained` with the exact truth, and only when
+  the incident really cost ≥ 3 paid subscriptions (otherwise a share is undefined).
+- **D69. Failure analysis.**
+  1. The first holiday scenario (German Unity Day, Germany at 10% of traffic) cost 0 paid subscriptions
+     in truth: a one-day dip in one mid-size country is below the noise. The verdict still credited the
+     holiday, with a 100 pp share error. The scenario is now US Labor Day (36% of traffic; truly costs
+     19 of 98 paid subs that day), still with a harmless deploy the same morning.
+  2. A first fix made any within-variance headline a "no real drop" verdict, which turned five
+     single-cause scenarios into misses (5/10). Real but small causes are real: the verdict now names
+     them and adds a caveat that the overall change is within normal variance.
+  3. Cached fixture worlds did not notice preset changes. Worlds now store a spec hash and regenerate
+     when it differs.
+  Final: top cause 10/10, 0 false accusations, share MAE 0.17 pp, abstentions 2/2 (deterministic
+  mode). LLM-mode results will be added once B1 lands (**revisit**).

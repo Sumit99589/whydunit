@@ -249,6 +249,12 @@ class LeadDetective:
             await self.emit("attribution", attribution=attribution)
             causes = self.causes(attribution, supported)
             narrative, refs = self.causes_narrative(attribution, causes)
+            if no_drop:
+                # The cause is real (mechanism and timing confirmed) but the headline moved within normal variance.
+                narrative += (
+                    " Overall the change is within normal variance, so this is a real but small problem "
+                    "rather than a collapse."
+                )
         else:
             kind = "unexplained"
             narrative = (

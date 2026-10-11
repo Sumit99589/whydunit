@@ -131,13 +131,13 @@ def test_holiday_and_red_herring(worlds):
     de = q(
         w,
         """SELECT CAST(started_at AS DATE) = ? AS hol, count(*) / count(DISTINCT CAST(started_at AS DATE))
-                 FROM sessions WHERE country = 'DE' GROUP BY 1""",
+                 FROM sessions WHERE country = 'US' GROUP BY 1""",
         day,
     )
     by = dict(de)
     assert by[True] < 0.55 * by[False]
-    assert q(w, "SELECT name FROM holidays WHERE country='DE' AND date = ?", day.isoformat()) == [
-        ("German Unity Day",)
+    assert q(w, "SELECT name FROM holidays WHERE country='US' AND date = ?", day.isoformat()) == [
+        ("Labour Day",)
     ]
     assert (
         q(w, "SELECT count(*) FROM deployments WHERE commit_message LIKE 'copy: update German%'")[0][0] == 1

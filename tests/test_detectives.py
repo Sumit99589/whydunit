@@ -41,9 +41,9 @@ async def test_holiday_red_herring(pg):
     r = (await investigate("fixture:holiday_red_herring", detectives=["deploy", "world"], with_lead=False))[
         "reports"
     ]
-    assert "German Unity Day" in claims(r["world"])
+    assert "Labour Day" in claims(r["world"])
     assert any(
-        h.effect.factor == "traffic" and h.effect.segment == {"country": "DE"} for h in r["world"].hypotheses
+        h.effect.factor == "traffic" and h.effect.segment == {"country": "US"} for h in r["world"].hypotheses
     )
     assert "passes on every browser" in claims(r["deploy"]) and not r["deploy"].hypotheses
 

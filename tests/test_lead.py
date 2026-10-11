@@ -76,6 +76,6 @@ async def test_tracking_bug_gives_measurement_verdict(pg):
 async def test_holiday_red_herring_no_false_accusation(pg):
     v = (await investigate("fixture:holiday_red_herring"))["verdict"]
     assert v["kind"] == "causes"
-    assert [c["segment"] for c in v["causes"]] == [{"country": "DE"}]
+    assert [c["segment"] for c in v["causes"]] == [{"country": "US"}]
     assert not any(c["factor"] == "signup_rate" for c in v["causes"])
     assert not any(a["type"] == "code_pr" for a in v["actions"])
