@@ -7,7 +7,7 @@ Stage 17 starts only after the submission is drafted on Devpost (PLAN), which ne
 **When credentials arrive, in this order:**
 1. ~~B2 + B3 + B4 + B5 + B11~~ done 2026-10-11: repos public, Acme on Vercel (https://acme-demo-lac.vercel.app),
    Neon migrated, engine on Render (https://whydunit-engine.onrender.com), Actions secrets set, simulator started.
-   Watch for 6 clean ticks (GitHub's cron is throttled on this repo; see DECISIONS D77).
+   6 clean ticks confirmed 19:00Z; the simulator chains its own runs (D79).
 2. B1 → `scripts/discover_models.py --write`, `scripts/smoke_llm.py`; rerun `whydunit evals run` in LLM mode.
 3. B8 → Tavily cassettes; B7 → real Stripe declines; B6 + B9 → runner as a Nebius Serverless Job.
 4. At T+5.5d the watcher should auto-open the flagship live case → Stage 11 live loop → set `FLAGSHIP_CASE_ID`.
@@ -36,7 +36,7 @@ An earlier start at 14:47Z was discarded: a test run with real credentials merge
 - [ ] **Done-when check** (real browser visit to production Acme → events + replay in DB and blob store,
       Stripe test subscription, helpdesk row) — after B3/B4/B5/B11 (and B7 for real Stripe)
 
-## Stage 3 — Live world simulator
+## Stage 3 — Live world simulator ✅ (running since 2026-10-11T16:51:36Z)
 - [x] Shared world model (`engine/world/model.py`) used by simulator and fixtures
 - [x] Simulated ad platform "AdPilot" (`engine/mock_ads/`): budget-capped delivery, Google-Ads-shaped
       reports and change events, no-API mode, HTML dashboard, migration 0002
@@ -49,7 +49,8 @@ An earlier start at 14:47Z was discarded: a test run with real credentials merge
 - [x] `.github/workflows/simulator.yml` every 15 min; idles until secrets exist
 - [x] Engine container (`Dockerfile`, GHCR workflow, `render.yaml`)
 - [x] Started 2026-10-11T16:51:36Z; first tick clean (5/5 probes, real sessions recorded through Acme → engine)
-- [ ] Confirm 6 consecutive clean ticks
+- [x] 6 consecutive clean ticks (17:45–19:00Z, 5/5 probes each; replays stored in Postgres). One earlier tick (17:42Z)
+      timed out on a sleeping Render engine; ticks now wake it first. Runs chain every ~5.5 h (D79).
 
 ## Stage 4 — Fixture worlds ✅
 - [x] `engine/fixtures/world.py`: DuckDB worlds with events, sessions, users, payments (Stripe-shaped),
