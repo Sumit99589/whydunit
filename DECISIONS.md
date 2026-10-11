@@ -196,3 +196,42 @@ Non-obvious choices and why. Items marked **revisit** are simplifications to com
 - **D54. Ultra only rewrites the verdict narrative** (one call per case) and the number validator checks
   it. If any number is not a computed metric, the template narrative stands and a `narrative_rejected`
   event is logged. Shares are displayed within 0–100% (CI bounds clipped).
+
+## Stage 10
+
+- **D55. Visual direction: a case board, keyed to crime-scene evidence markers.** Cool paper (#F1F4F8) or
+  slate (#121820) with one accent, evidence-marker yellow (#F2C12E), used for the numbered tents that
+  mark pinned evidence (numbered in pin order, a real sequence) and for highlights. One family (Schibsted
+  Grotesk) with tabular figures only where numbers line up. No all-caps eyebrows, no mono labels, no
+  card-kit gradients. The one orchestrated motion is the blame waterfall drawing in, cause by cause, when
+  the verdict lands. Other motion only answers state changes: a pulsing dot on a working detective, and
+  markers dropping onto the wall. Reduced motion is respected.
+- **D56. The board is client-rendered from the event log** through a `/engine/*` rewrite to the engine,
+  using the same reducer for live, history and replay, so replay is pixel-identical to the live run.
+  Next 16's Cache Components shell stays static and the case streams in.
+- **D57. `compress: false` in the UI and `no-transform` on SSE**: the live stream never ends, so gzip in
+  `next start` held back its tail (the first CI smoke run caught a live case that never updated).
+  Vercel compresses at its edge anyway.
+- **D58. UI checks run in GitHub Actions** (`ui-smoke.yml`): Postgres service, engine, `next build` +
+  `next start`, Chromium at 1440 px and 390 px in light and dark, checks for overflow and console errors,
+  live and replay runs, and screenshots as an artifact. Locally, available memory was under the 3 GB
+  floor from ~/.claude/CLAUDE.md for the whole session.
+
+## Stage 11
+
+- **D59. Code fixes go through the GitHub contents API, not a local clone**: the engine container has no
+  git, and a single-file fix needs only "read file at ref, write file on a branch, open PR". Super writes the
+  forward fix (whole file). The deterministic fallback restores the file as it was before the culprit
+  commit, i.e. a revert.
+- **D60. Nothing is applied without approval**, and approval needs `WHYDUNIT_ADMIN_KEY`. That covers
+  merging a PR, changing an ad budget, and switching on the payments mitigation. On the public demo
+  judges see fixes and their verification but cannot change anything. Fixture worlds produce proposals
+  only. Live investigations opened through the API do not open PRs; only the watcher (or an admin) does.
+- **D61. Verification = each cause's factor, in its segment, back above the 90% Wilson lower bound of its
+  baseline rate** (traffic causes use the segment's share of visitors, robust to the daily curve), after a
+  30-minute settle and a minimum sample. All causes recovered → case closed. Not recovered 24 h after the
+  fix → case reopened with the reason.
+- **D62. The watcher waits for a sustained drop** (≥ 15% and z ≤ −3 against the same hours one and two
+  weeks earlier, at now, now − 18 h and now − 36 h) before opening a case. One bad afternoon is not a case.
+  In the live world this also means the auto-opened case covers all three planted incidents
+  (T+4d to T+5d).

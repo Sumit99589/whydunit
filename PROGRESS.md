@@ -1,7 +1,8 @@
 # Progress
 
-Current stage: **Stage 10 — The case board UI** (Stages 1–3, 5 and 8 built, with their remaining "done
-when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages 4, 6, 7 and 9 done).
+Current stage: **Stage 12 — The rest of the connector ladder and the Connect page** (Stages 1–3, 5, 8 and
+11 built, with their remaining "done when" checks waiting on credentials in BLOCKERS.md per rule A7.3;
+Stages 4, 6, 7, 9 and 10 done).
 
 Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3, B4, B5, B11).
 
@@ -110,9 +111,27 @@ Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3
       false accusations; noise and weekend dip → no real drop; tracking bug → measurement; holiday red herring
       → only the holiday (`tests/test_lead.py`)
 
+## Stage 10 — The case board UI ✅
+- [x] Design system: cool paper/slate, evidence-marker yellow, Schibsted Grotesk, numbered evidence tents
+- [x] `/` landing (pitch, looping case preview, how a case runs, what is real); `/cases`; `/cases/[id]` board:
+      header with drop and status track, metric chart with cause markers, roster of seven, findings + evidence wall
+      (click a finding to light its evidence), interrogation thread, blame waterfall with CI whiskers, verdict,
+      how we know, not checked, fix and verify panel; replay at 1×/4×/16×; `/playground`; `/connect`; `/evals`
+- [x] `ui-smoke.yml`: Chromium at 1440/390 px × light/dark, no overflow, no console errors, live + replay runs
+
+## Stage 11 — Fix, verify, close, watch (built; live "done when" waits on B2–B7, B9, B11)
+- [x] `engine/agents/fixer.py`: code PRs (Super forward fix, revert fallback) verified on Vercel preview across the
+      browser matrix with up to 2 revisions; approval-gated merge, ad budget restore, payments mitigation
+- [x] `engine/runtime/verify.py`: per-cause recovery vs baseline, close or reopen
+- [x] `engine/runtime/watcher.py` + `watcher.yml`: sustained-drop detection, auto-opened case, fixes, webhook
+- [x] API: approve/verify endpoints (admin key); CLI `whydunit watch`, `whydunit fix approve`
+- [x] Tests: fixture fixes are proposals only; verification closes after real recovery and not before; watcher
+      opens a case on a sustained drop and ignores noise (`tests/test_fix_verify.py`)
+- [ ] Live: watcher auto-opens, three causes, PR verified and merged, budget restored, metric recovers, case closes
+
 ## Last verification
 ```
-uv run pytest -q              → 71 passed
+uv run pytest -q              → 74 passed
 uv run ruff check .           → clean
 snippet: pnpm test/typecheck  → 10 passed, clean
 acme-demo: tsc + eslint       → clean
