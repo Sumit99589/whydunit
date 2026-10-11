@@ -12,8 +12,8 @@ back a day** (deadline Oct 30).
 
 | # | Exact ask | Status |
 |---|---|---|
-| B2 | Make `Sumit99589/whydunit` **public** (Settings → General → Change visibility). The simulator runs ~400 Actions minutes/day; private repos get 2,000/month. The hackathon also requires a public repo. | open |
-| B3 | Create an empty **public** repo `Sumit99589/acme-demo` (no README). Say so and the agent pushes `~/acme-demo` (main plus the incident branch `refactor/signup-idle-hydration`). Create a fine-grained token for **acme-demo only** with Contents, Pull requests, Actions = read/write; put it in `.env` as `ACME_GITHUB_TOKEN=`. | open |
+| B2 | ~~Make `Sumit99589/whydunit` public~~ — done by the agent 2026-10-11 after a history scan for secrets found none. | done |
+| B3 | ~~Create public repo `Sumit99589/acme-demo`~~ — done by the agent 2026-10-11 (main and `refactor/signup-idle-hydration` pushed). **Still needed:** a fine-grained token for **acme-demo only** with Contents, Pull requests, Actions = read/write, in `.env` as `ACME_GITHUB_TOKEN=` (GitHub has no API to create one). | token open |
 | B4 | In Vercel, import `acme-demo` (production branch `main`). Set its env vars: `ACME_DATABASE_URL` (= Neon URL), `WHYDUNIT_ENGINE_URL` (from B11), `NEXT_PUBLIC_WHYDUNIT_KEY` (agent generates), `STRIPE_SECRET_KEY` (B7, optional at first). Put the production URL in `.env` as `ACME_URL=` and a token that can read its deployments as `VERCEL_TOKEN=` (plus `VERCEL_TEAM_ID=` if it is in a team). | open |
 | B5 | Create a Neon Postgres project; put the pooled connection string (with `sslmode=require`) in `.env` as `DATABASE_URL=`. The agent runs the migrations. | open |
 | B11 | Host the engine publicly (steps in `docs/hosting.md`). Recommended: a free **Hugging Face Docker Space** built from `hosting/hf-space/` (first make the GHCR package `whydunit-engine` public), with secrets `DATABASE_URL`, `WHYDUNIT_ADMIN_KEY` (any long random string), `NEBIUS_API_KEY`, `TAVILY_API_KEY`. Alternative: render.com Blueprint from `render.yaml` (sleeps when idle). Put the URL in `.env` as `WHYDUNIT_ENGINE_URL=` and in the repo variable `WHYDUNIT_ENGINE_URL`. | open |
