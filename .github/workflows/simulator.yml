@@ -1,7 +1,9 @@
 name: simulator
 
-# The live world simulator (PLAN Stage 3). Every 15 minutes it advances the Acme world from the last
-# tick to now, touching real systems. It stays idle until its secrets are configured (BLOCKERS.md).
+# The live world simulator (PLAN Stage 3). It advances the Acme world from the last tick to now, touching real
+# systems. GitHub's cron barely fires on this repo (DECISIONS D79), so each run loops: a tick every 15 minutes
+# for about 5.5 hours, then it dispatches its successor. The cron only restarts the chain if it ever breaks.
+# It stays idle until its secrets are configured (BLOCKERS.md).
 on:
   schedule:
     - cron: "*/15 * * * *"
@@ -11,6 +13,10 @@ on:
         description: "Skip Playwright probes and sessions"
         type: boolean
         default: false
+      loop_minutes:
+        description: "Keep ticking for this long (0 = a single tick, no successor)"
+        type: number
+        default: 330
 
 concurrency:
   group: simulator
@@ -18,11 +24,12 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   tick:
     runs-on: ubuntu-latest
-    timeout-minutes: 14
+    timeout-minutes: 355
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       WHYDUNIT_ENGINE_URL: ${{ secrets.WHYDUNIT_ENGINE_URL }}
@@ -62,16 +69,32 @@ jobs:
       - name: Migrate
         if: steps.cfg.outputs.ready == 'true'
         run: uv run whydunit db upgrade
-      - name: Tick
+      - name: Tick every 15 minutes
         if: steps.cfg.outputs.ready == 'true'
-        run: uv run python -m simulator.tick ${{ inputs.skip_browsers == true && '--skip-browsers' || '' }}
-      - name: Record ground truth when it changes
-        if: steps.cfg.outputs.ready == 'true'
+        env:
+          LOOP_MINUTES: ${{ github.event_name == 'schedule' && 330 || inputs.loop_minutes }}
+          TICK_ARGS: ${{ inputs.skip_browsers == true && '--skip-browsers' || '' }}
         run: |
-          if ! git diff --quiet -- simulator/ground_truth.json 2>/dev/null || [ -n "$(git status --porcelain simulator/ground_truth.json)" ]; then
-            git config user.name "whydunit-simulator"
-            git config user.email "whydunit-simulator@users.noreply.github.com"
-            git add simulator/ground_truth.json
-            git commit -m "chore(sim): update ground truth"
-            git pull --rebase -q && git push -q
-          fi
+          git config user.name "whydunit-simulator"
+          git config user.email "whydunit-simulator@users.noreply.github.com"
+          end=$(( $(date +%s) + LOOP_MINUTES * 60 ))
+          failed=0
+          while :; do
+            uv run python -m simulator.tick $TICK_ARGS || { failed=$((failed + 1)); echo "::warning::tick failed"; }
+            # Record ground truth when it changes.
+            if [ -n "$(git status --porcelain simulator/ground_truth.json)" ]; then
+              git add simulator/ground_truth.json
+              git commit -q -m "chore(sim): update ground truth"
+              git pull --rebase -q && git push -q || echo "::warning::ground truth push failed"
+            fi
+            next=$(( ($(date +%s) / 900 + 1) * 900 ))
+            [ "$next" -ge "$end" ] && break
+            sleep $(( next - $(date +%s) ))
+          done
+          echo "failed ticks: $failed"
+          [ "$failed" -eq 0 ]
+      - name: Dispatch the next run
+        if: always() && !cancelled() && steps.cfg.outputs.ready == 'true' && (github.event_name == 'schedule' || inputs.loop_minutes > 0)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run simulator.yml -R "$GITHUB_REPOSITORY" -f skip_browsers=${{ inputs.skip_browsers == true }}

@@ -315,3 +315,7 @@ Non-obvious choices and why. Items marked **revisit** are simplifications to com
 - **D78. Tests never see real credentials.** `tests/conftest.py` strips every real-system variable that
   `.env` provides. A run before this change used the real acme-demo token and merged the planted incident
   branch four days early; the clock was restarted after resetting `main` and wiping Neon.
+- **D79. The simulator chains its own runs.** GitHub's `*/15` cron fired once in about 3 hours on day one, so
+  each simulator run ticks every 15 minutes for about 5.5 hours and then dispatches its successor
+  (`workflow_dispatch` from `GITHUB_TOKEN` is allowed to start runs). The cron stays only as a restarter;
+  the `simulator` concurrency group keeps a single chain. Public repos have free Actions minutes.
