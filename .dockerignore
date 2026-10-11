@@ -1,0 +1,11 @@
+.git
+.venv
+.cache
+.pgdata
+ui
+packages
+runner
+docs
+tests
+**/__pycache__
+**/node_modules
