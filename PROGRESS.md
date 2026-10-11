@@ -5,14 +5,17 @@ credentials is built and verified (Stages 4, 6, 7, 9, 10, 13, 15 done; 1–3, 5,
 Stage 17 starts only after the submission is drafted on Devpost (PLAN), which needs the human.
 
 **When credentials arrive, in this order:**
-1. B2 + B3 + B4 + B5 + B11 → push acme-demo, set GitHub Actions secrets from `.env`, run migrations on Neon,
-   start the simulator (record the start time here); watch for 6 clean ticks.
+1. ~~B2 + B3 + B4 + B5 + B11~~ done 2026-10-11: repos public, Acme on Vercel (https://acme-demo-lac.vercel.app),
+   Neon migrated, engine on Render (https://whydunit-engine.onrender.com), Actions secrets set, simulator started.
+   Watch for 6 clean ticks (GitHub's cron is throttled on this repo; see DECISIONS D77).
 2. B1 → `scripts/discover_models.py --write`, `scripts/smoke_llm.py`; rerun `whydunit evals run` in LLM mode.
 3. B8 → Tavily cassettes; B7 → real Stripe declines; B6 + B9 → runner as a Nebius Serverless Job.
 4. At T+5.5d the watcher should auto-open the flagship live case → Stage 11 live loop → set `FLAGSHIP_CASE_ID`.
 5. B12 → deploy the UI; record the video (docs/video-script.md); submit (docs/devpost.md checklist).
 
-Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3, B4, B5, B11).
+Simulator start time: **2026-10-11T16:51:36Z** (T+4d = Oct 15 16:51 UTC deploy bug; flagship case ≈ Oct 17 04:51 UTC).
+An earlier start at 14:47Z was discarded: a test run with real credentials merged the incident branch early; acme-demo
+`main` was reset to `f26fcbc`, the bad Vercel deployment deleted, the Neon data wiped, and tests now strip real env.
 
 ## Stage 1 — Repo scaffold, model client, smoke tests
 - [x] Monorepo layout; `engine/runtime/llm.py` (roles, reasoning switch, retries, cache, cost meter, budgets)
@@ -45,7 +48,8 @@ Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3
       ground truth (`simulator/ground_truth.json`, committed by the workflow when it changes)
 - [x] `.github/workflows/simulator.yml` every 15 min; idles until secrets exist
 - [x] Engine container (`Dockerfile`, GHCR workflow, `render.yaml`)
-- [ ] **Start it** (B2, B3, B4, B5, B11) and confirm 6 consecutive clean ticks
+- [x] Started 2026-10-11T16:51:36Z; first tick clean (5/5 probes, real sessions recorded through Acme → engine)
+- [ ] Confirm 6 consecutive clean ticks
 
 ## Stage 4 — Fixture worlds ✅
 - [x] `engine/fixtures/world.py`: DuckDB worlds with events, sessions, users, payments (Stripe-shaped),

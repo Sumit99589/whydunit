@@ -307,3 +307,11 @@ Non-obvious choices and why. Items marked **revisit** are simplifications to com
 - **D76. Public endpoints are rate-limited per IP**: new cases 3/h, CSV uploads 5/h with a 5 MB cap,
   connection tests 10/h. Admin-key requests are exempt. All writes that change the world need the admin
   key. Secrets never reach the client: `/status` reports only booleans and model IDs.
+- **D77. Engine on Render free, blobs in Postgres.** Hugging Face now charges for Docker Spaces (PRO), so
+  the engine runs on Render's free plan from the public GHCR image. Render's disk is wiped on sleep and
+  redeploy, so without an S3 bucket blobs go to a `blobs` table in Neon (about 15 KB per recorded session,
+  roughly 80 MB over the run). GitHub's `*/15` cron is heavily throttled on this repo (one scheduled run in
+  2.5 h on day one); ticks catch up on missed windows, so lost ticks cost real-browser sessions, not traffic.
+- **D78. Tests never see real credentials.** `tests/conftest.py` strips every real-system variable that
+  `.env` provides. A run before this change used the real acme-demo token and merged the planted incident
+  branch four days early; the clock was restarted after resetting `main` and wiping Neon.
