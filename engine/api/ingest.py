@@ -150,7 +150,9 @@ async def ingest_events(request: Request) -> dict[str, Any]:
     event_rows, sessions = [], {}
     for ev in batch.events:
         ctx = ev.context
-        country = hdr_country or (ctx.country.upper() if ctx.country else None)
+        # Simulator traffic carries its simulated country; real traffic uses the edge's geo header.
+        body_country = ctx.country.upper() if ctx.country else None
+        country = (body_country or hdr_country) if ctx.synthetic else (hdr_country or body_country)
         channel = derive_channel(ctx)
         ts = ev.ts if ev.ts.tzinfo else ev.ts.replace(tzinfo=UTC)
         event_rows.append(
