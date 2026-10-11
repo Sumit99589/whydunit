@@ -223,6 +223,8 @@ async def tick(now: datetime | None = None, *, skip_browsers: bool = False) -> d
     }
     acme = Acme()
     ingest = EngineIngest()
+    if not await ingest.wake():
+        log.warning("engine did not answer /health; sending anyway")
     seed = int(w_start.timestamp())
     rng = random.Random(seed)
     nprng = np.random.default_rng(seed)

@@ -41,6 +41,19 @@ class EngineIngest:
             base_url=self.base_url, transport=transport, timeout=30, headers={"x-whydunit-key": self.key}
         )
 
+    async def wake(self, attempts: int = 4) -> bool:
+        """A free host sleeps when idle and takes about a minute to wake; wait for it before sending anything
+        (real browser sessions reach it too, through Acme's /api/wd proxy)."""
+        if self.base_url == "http://engine.local":
+            return True
+        for _ in range(attempts):
+            try:
+                if (await self.client.get("/health", timeout=60)).status_code == 200:
+                    return True
+            except httpx.HTTPError:
+                pass
+        return False
+
     async def send(self, events: list[dict[str, Any]]) -> int:
         sent = 0
         for i in range(0, len(events), 200):
