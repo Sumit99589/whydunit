@@ -1,0 +1,16 @@
+# Per-case and per-detective LLM budgets. Costs in USD.
+case:
+  max_cost_usd: 0.60
+  max_wall_clock_s: 600
+detective:
+  max_steps: 8
+  max_tokens: 60000
+lead:
+  max_cross_exam_rounds: 3
+  max_ultra_calls: 6
+playground:
+  daily_global_budget_usd: 2.00
+  per_ip_cases_per_hour: 3
+cache:
+  enabled: true
+  dir: .cache/llm

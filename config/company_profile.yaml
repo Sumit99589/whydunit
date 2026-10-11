@@ -1,0 +1,19 @@
+# The company being investigated. The World detective builds its queries from this.
+company:
+  name: Acme Notes
+  product: A note-taking SaaS for small teams
+  industry: productivity software
+  website: https://acme-notes.vercel.app
+  top_countries: [US, GB, IN, DE, BR]
+  competitors: [Notion, Evernote, Obsidian, Bear]
+  pricing: {plan: Pro, price_usd_month: 12}
+dependencies:
+  - name: GitHub
+    statuspage: https://www.githubstatus.com
+  - name: Vercel
+    statuspage: https://www.vercel-status.com
+  - name: Stripe
+    statuspage: null   # Stripe does not use Atlassian Statuspage; checked via Tavily instead
+  - name: Neon
+    statuspage: https://neonstatus.com
+headline_metric: paid_subs

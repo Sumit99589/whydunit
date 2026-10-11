@@ -1,0 +1,53 @@
+# Token Factory model roles. This is the ONLY place model IDs live.
+# Status: IDs below are UNVERIFIED candidates from Nebius material and third-party catalogs
+# (ultra/omni ids and prices from requesty.ai / typingmind listings, 2026-10-11). Run
+#   uv run python scripts/discover_models.py --write
+# once NEBIUS_API_KEY is set; it rewrites the ids from GET /v1/models.
+provider:
+  base_url: https://api.tokenfactory.nebius.com/v1/
+  api_key_env: NEBIUS_API_KEY
+  timeout_s: 120
+  max_retries: 4
+
+# How Nemotron's reasoning switch is passed. "chat_template_kwargs" sends
+# extra_body={"chat_template_kwargs": {"enable_thinking": bool}};
+# "system_flag" prepends "/think" or "/no_think" to the system prompt.
+reasoning_switch: chat_template_kwargs
+
+roles:
+  nano:
+    id: nvidia/nvidia-nemotron-3-nano-30b-a3b
+    verified: false
+    reasoning_default: false
+    max_tokens: 4096
+    # USD per 1M tokens (input, output). Unverified; update from the Token Factory pricing page.
+    price_in: 0.06
+    price_out: 0.24
+  super:
+    id: nvidia/nemotron-3-super-120b-a12b
+    verified: false
+    reasoning_default: true
+    max_tokens: 8192
+    price_in: 0.30
+    price_out: 0.90
+  ultra:
+    id: nvidia/Nemotron-3-Ultra-550b-a55b
+    verified: false
+    reasoning_default: true
+    max_tokens: 8192
+    price_in: 1.00
+    price_out: 3.00
+  omni:
+    id: nvidia/Nemotron-3-Nano-Omni
+    verified: false
+    reasoning_default: false
+    max_tokens: 2048
+    image_input: true
+    video_input: false
+    price_in: 0.06
+    price_out: 0.24
+
+# If a role's model is unavailable, fall back (Part C3 of PLAN.md).
+fallbacks:
+  ultra: super
+  omni: null

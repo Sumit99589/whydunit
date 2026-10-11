@@ -12,3 +12,9 @@ dist/
 *.duckdb
 *.duckdb.wal
 .DS_Store
+.cache/
+.pgdata/
+*.egg-info/
+/scratch/
+playwright-report/
+test-results/
