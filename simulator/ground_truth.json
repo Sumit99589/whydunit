@@ -1,0 +1,54 @@
+{
+  "simulator_start": "2026-10-11T14:47:34.220676+00:00",
+  "note": "Written by the live simulator. Times are UTC. Used to score the live case.",
+  "incidents": [
+    {
+      "id": "safari_signup_bug",
+      "type": "deploy_bug",
+      "description": "A refactor of the signup form defers enabling the submit button until the browser is idle via requestIdleCallback, with no fallback. WebKit lacks the API, so on Safari (and every iOS browser) the Create account button silently does nothing.",
+      "affects": {
+        "factor": "signup_rate",
+        "segment": {
+          "engine": "webkit"
+        }
+      },
+      "scheduled_at": "2026-10-15T14:47:34.220676+00:00",
+      "fired_at": null,
+      "details": null,
+      "scheduled_end": null,
+      "mitigated_at": null
+    },
+    {
+      "id": "ads_budget_cap",
+      "type": "ads_budget_cap",
+      "description": "A teammate lowers the daily budget of the main search campaign from $450 to $150. It now runs out around midday every day and paid traffic falls in the afternoon.",
+      "affects": {
+        "factor": "traffic",
+        "segment": {
+          "channel": "paid"
+        }
+      },
+      "scheduled_at": "2026-10-16T02:47:34.220676+00:00",
+      "fired_at": null,
+      "details": null,
+      "scheduled_end": null,
+      "mitigated_at": null
+    },
+    {
+      "id": "payment_declines",
+      "type": "payment_declines",
+      "description": "Issuer-side declines for cards from Brazil rise from about 3% to about 45% (do_not_honor / generic_decline), so Brazilian checkouts fail more often.",
+      "affects": {
+        "factor": "payment_success_rate",
+        "segment": {
+          "country": "BR"
+        }
+      },
+      "scheduled_at": "2026-10-16T14:47:34.220676+00:00",
+      "fired_at": null,
+      "details": null,
+      "scheduled_end": "2026-10-20T14:47:34.220676+00:00",
+      "mitigated_at": null
+    }
+  ]
+}
