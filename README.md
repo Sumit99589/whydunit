@@ -24,6 +24,58 @@ Nemotron** (Nano, Super, Ultra, Nano Omni), plus **Tavily** for the outside worl
 - **Works without APIs**: a connector ladder from official APIs down to warehouses, CSV exports, reading a dashboard
   screenshot with Nemotron Nano Omni, the public web, and asking a human.
 
+## How it works
+
+```mermaid
+flowchart LR
+  subgraph Sources["Sources (Acme Notes, the sandbox startup)"]
+    GH[GitHub]:::real
+    VC[Vercel deployments]:::real
+    ST[Stripe test mode]:::real
+    EV[Whydunit snippet<br/>events + rrweb recordings]:::real
+    HD[Helpdesk + reviews]:::real
+    AD[Ad platform<br/>SIMULATED]:::sim
+    TV[Tavily news]:::real
+    HO[Holidays, status pages]:::real
+  end
+
+  subgraph Ladder["Connector ladder (by evidence kind)"]
+    T1[1 Official API / MCP]
+    T2[2 Warehouse / PyAirbyte]
+    T3[3 CSV export<br/>Nano maps columns]
+    T4[4 Screen reading<br/>Nano Omni reads screenshots]
+    T5[5 Public web]
+    T6[6 Ask a human]
+  end
+
+  subgraph Team["Detectives (run concurrently)"]
+    F[Funnel]
+    D[Deploy]
+    S[Session]
+    P[Payments]
+    A[Ads]
+    V[Voice]
+    W[World]
+  end
+
+  Sources --> Ladder --> Team
+  Team -->|findings, hypotheses| L[Lead detective<br/>Nemotron Ultra]
+  L -->|questions| Team
+  L --> J{Judgement in code<br/>mechanism + timing}
+  J --> SH[Shapley attribution<br/>+ bootstrap CIs]
+  SH --> VD[Verdict]
+  VD --> FX[Fixer<br/>PR, config, mitigation]
+  FX -->|preview flows| RN[Browser runner<br/>Nebius Serverless Job]
+  FX --> VF[Verifier + watcher]
+  VF -->|recovered| CL[Case closed]
+  VF -->|not recovered| L
+
+  classDef real fill:#e8f4ec,stroke:#1f8a4c
+  classDef sim fill:#fff4e5,stroke:#b5651d
+```
+
+More in [docs/architecture.md](docs/architecture.md).
+
 ## Evaluation
 
 Ten planted scenarios with exact ground truth (`uv run whydunit evals run`):
