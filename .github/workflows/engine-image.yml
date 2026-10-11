@@ -26,14 +26,14 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/whydunit-engine:latest
-            ghcr.io/${{ github.repository_owner }}/whydunit-engine:${{ github.sha }}
+            ghcr.io/sumit99589/whydunit-engine:latest
+            ghcr.io/sumit99589/whydunit-engine:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Smoke-test the image
         run: |
           docker run -d --name engine -p 8000:8000 -e DATABASE_URL=postgresql://postgres:pw@localhost:5432/postgres \
-            ghcr.io/${{ github.repository_owner }}/whydunit-engine:${{ github.sha }} \
+            ghcr.io/sumit99589/whydunit-engine:${{ github.sha }} \
             sh -c "uv run --no-sync python -c 'import engine.api.app, simulator.tick; print(\"import ok\")'"
           sleep 8; docker logs engine
           docker logs engine | grep -q "import ok"
