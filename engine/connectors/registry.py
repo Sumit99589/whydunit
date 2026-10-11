@@ -40,26 +40,35 @@ class Registry:
         cs = [c for c in self.connectors if kind in c.kinds]
         return sorted(cs, key=lambda c: (_tier(c, kind), -getattr(c, "priority", 0)))
 
-    async def _is_available(self, c: Connector) -> bool:
+    async def _is_available(self, c: Connector, kind: str | None = None) -> bool:
         if c.name not in self._avail:
             try:
                 self._avail[c.name] = bool(await c.available())
             except Exception as e:  # noqa: BLE001
                 self._avail[c.name] = False
                 self._failed[c.name] = f"{type(e).__name__}: {e}"[:200]
-        return self._avail[c.name]
+        if not self._avail[c.name]:
+            return False
+        per_kind = getattr(c, "available_for", None)
+        if per_kind is None or kind is None:
+            return True
+        key = f"{c.name}:{kind}"
+        if key not in self._avail:
+            # Not cached across calls: a CSV for this kind may be uploaded mid-case.
+            return bool(await per_kind(kind))
+        return self._avail[key]
 
     async def ladder(self, kind: str) -> list[LadderStep]:
         out = []
         for c in self.candidates(kind):
-            ok = await self._is_available(c)
+            ok = await self._is_available(c, kind)
             reason = "" if ok else self._failed.get(c.name) or _needs(c)
             out.append(LadderStep(c.name, _tier(c, kind), ok, reason))
         return out
 
     async def resolve(self, kind: str) -> Connector:
         for c in self.candidates(kind):
-            if await self._is_available(c):
+            if await self._is_available(c, kind):
                 return c
         raise NoSource(kind, await self.ladder(kind))
 
@@ -69,7 +78,7 @@ class Registry:
         """Fetch from the best connector; on error, fall down the ladder to the next available one."""
         errors: list[LadderStep] = []
         for c in self.candidates(kind):
-            if not await self._is_available(c):
+            if not await self._is_available(c, kind):
                 errors.append(LadderStep(c.name, _tier(c, kind), False, _needs(c)))
                 continue
             try:
@@ -121,5 +130,7 @@ def _tier(c: Connector, kind: str) -> int:
 
 
 def _needs(c: Connector) -> str:
+    if getattr(c, "unavailable_reason", None):
+        return c.unavailable_reason  # type: ignore[attr-defined]
     needs = getattr(c, "needs_env", ())
     return f"needs {', '.join(needs)}" if needs else "unavailable"

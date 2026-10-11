@@ -125,6 +125,7 @@ export interface CaseState {
   attribution?: Attribution;
   verdict?: Verdict;
   fixes: Record<string, FixState>;
+  requests: { id: string; kind: string; reason: string; detective: string }[];
   cost: number;
   lastSeq: number;
   done: boolean;
@@ -159,6 +160,7 @@ export function emptyCase(id: string): CaseState {
     hypotheses: {},
     thread: [],
     fixes: {},
+    requests: [],
     cost: 0,
     lastSeq: 0,
     done: false,
@@ -274,6 +276,10 @@ export function reduce(s: CaseState, e: CaseEvent): CaseState {
         fixes: { ...s.fixes, [f.id]: { ...prev, ...f, log: [...(prev?.log ?? []), ...(p.note ? [p.note] : [])] } },
       };
     }
+    case "evidence_requested":
+      return s.requests.some((r) => r.kind === p.request.kind)
+        ? s
+        : { ...s, requests: [...s.requests, { ...p.request, detective: who }] };
     case "verifying":
       return { ...s, status: "verifying" };
     case "case_closed":

@@ -7,7 +7,7 @@ const TYPES = [
   "case_opened", "detective_started", "tool_call", "tool_result", "evidence_pinned", "finding", "finding_rejected",
   "cannot_determine", "detective_report", "detective_error", "lead_started", "hypothesis", "brief", "question", "answer",
   "judgement", "attribution", "verdict", "narrative_rejected", "investigation_complete", "fix_proposed", "fix_updated",
-  "verifying", "verification", "case_closed", "case_reopened", "case_failed",
+  "verifying", "verification", "case_closed", "case_reopened", "case_failed", "evidence_requested",
 ];
 
 type Action = { kind: "event"; e: CaseEvent } | { kind: "reset"; id: string };

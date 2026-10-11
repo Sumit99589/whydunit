@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { Ladder } from "./Ladder";
+import { UploadFromQuery } from "./UploadFromQuery";
 
 export default function Connect() {
   return (
@@ -9,7 +11,12 @@ export default function Connect() {
         official API first, then a warehouse, a CSV export, reading the vendor&rsquo;s dashboard from a screenshot, the public
         web, and finally asking you for an upload. Evidence from lower tiers counts for less.
       </p>
-      <Ladder />
+      <div className="space-y-8">
+        <Suspense fallback={null}>
+          <UploadFromQuery />
+        </Suspense>
+        <Ladder />
+      </div>
     </div>
   );
 }

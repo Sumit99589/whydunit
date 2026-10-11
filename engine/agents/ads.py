@@ -37,9 +37,13 @@ class AdsDetective(Detective):
                 pl.col("cost").sum(),
                 pl.col("impressions").sum(),
                 pl.col("budget_limited").any().alias("limited"),
-                pl.col("hour").filter(pl.col("budget_limited")).min().alias("first_limited"),
+                (
+                    pl.col("first_limited_hour").min()
+                    if "first_limited_hour" in df.columns
+                    else pl.col("hour").filter(pl.col("budget_limited")).min().dt.hour()
+                ).alias("first_limited"),
             )
-            .sort(["day", "campaign_id"])
+            .sort(["day", "campaign_name"])
         )
         an = await self.analysis(
             "ads_daily",
@@ -49,10 +53,10 @@ class AdsDetective(Detective):
             w,
         )
 
-        def per_day(period_start, period_end, cid=None):
+        def per_day(period_start, period_end, name=None):
             s = df.filter((pl.col("hour") >= period_start) & (pl.col("hour") < period_end))
-            if cid:
-                s = s.filter(pl.col("campaign_id") == cid)
+            if name:
+                s = s.filter(pl.col("campaign_name") == name)
             days = (period_end - period_start).total_seconds() / 86400
             return s["clicks"].sum() / days, s["cost"].sum() / days
 
@@ -83,13 +87,13 @@ class AdsDetective(Detective):
             return
         if cuts:
             cut = max(cuts, key=lambda c: c["old_value"] - c["new_value"])
-            cid = cut["campaign_id"]
+            cname = cut["campaign_name"]  # screen-read rows carry names, not ids
             ts = cut["ts"]
-            after = daily.filter((pl.col("campaign_id") == cid) & (pl.col("day") > ts.date()))
+            after = daily.filter((pl.col("campaign_name") == cname) & (pl.col("day") > ts.date()))
             capped_days = after.filter(pl.col("limited"))
-            cap_hours = [r.hour for r in capped_days["first_limited"].to_list() if r is not None]
-            k0, _ = per_day(ctx.case.baseline_start, ctx.case.baseline_end, cid)
-            k1, _ = per_day(max(ts, ctx.case.window_start), ctx.case.window_end, cid)
+            cap_hours = [int(h) for h in capped_days["first_limited"].to_list() if h is not None]
+            k0, _ = per_day(ctx.case.baseline_start, ctx.case.baseline_end, cname)
+            k1, _ = per_day(max(ts, ctx.case.window_start), ctx.case.window_end, cname)
             m_old = ctx.metric(
                 f"{cut['campaign_name']} daily budget before", cut["old_value"], "currency", [changes.id]
             )
@@ -127,7 +131,12 @@ class AdsDetective(Detective):
             self.add_finding(
                 f"{cut['user_email']} lowered the daily budget of “{cut['campaign_name']}” from ${cut['old_value']:.0f} to "
                 f"${cut['new_value']:.0f} on {ts:%a %b %d %H:%M} UTC.{cap_txt} Its clicks fell from {k0:.0f} to {k1:.0f} "
-                "per day.",
+                "per day."
+                + (
+                    " (Read from the ad platform's dashboard by screen reading, so treat the figures as approximate.)"
+                    if perf.tier == 4
+                    else ""
+                ),
                 [changes.id, perf.id, an.id],
                 refs,
                 confidence=0.95,

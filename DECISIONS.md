@@ -235,3 +235,25 @@ Non-obvious choices and why. Items marked **revisit** are simplifications to com
   weeks earlier, at now, now − 18 h and now − 36 h) before opening a case. One bad afternoon is not a case.
   In the live world this also means the auto-opened case covers all three planted incidents
   (T+4d to T+5d).
+
+## Stage 12
+
+- **D63. Per-kind availability in the registry** (`available_for(kind)`, not cached): a CSV upload makes the
+  tier-3 connector a source only for its own kind, and can arrive mid-case.
+- **D64. CSV mapping = Nano first, rules second.** Synonym lists (Stripe's export headers among them) plus
+  fuzzy matching. Values are normalised per kind: dollars → cents, Stripe statuses → succeeded or
+  requires_payment_method, outcome derived from the decline reason. The user sees and can edit the
+  mapping before it becomes a source. Activating an upload needs the admin key, so a judge's upload cannot
+  quietly change the live world's evidence for everyone.
+- **D65. Screen reading reads the dashboard's tables from section screenshots with Omni, falling back to
+  the rendered table text when no vision model is available** (labelled as such in the bundle). The
+  runner gained a `capture` job: full-page and per-section screenshots, plus each table's text. Bundles are
+  tier 4: confidence ×0.6, a "screen-read, medium confidence" note, and the screenshot as the audit artifact.
+  The Ads detective matches campaigns by name (screen-read rows have no ids), uses the dashboard's "limited
+  from HH:00" hour, and says the figures are approximate.
+- **D66. PyAirbyte is wired for one real source (Stripe charges → payments) as an optional dependency
+  group.** It installs each connector into its own virtualenv, too heavy for the default install and the
+  engine image. Adding a source is a dict entry in `engine/connectors/airbyte_conn.py`. Locking the group
+  downgraded wrapt to 1.17.3; all tests still pass.
+- **D67. Tier 6 (ask a human) is an `evidence_requests` row plus a card on the case board** linking to the
+  upload panel pre-filled with the kind and case. The case never waits for it.

@@ -179,7 +179,11 @@ class Local:
     async def submit(self, kind: str, spec: dict[str, Any]) -> dict[str, Any]:
         from runner import jobs
 
-        fn = jobs.run_flows if kind == "run-flows" else jobs.render_replays
+        fn = {
+            "run-flows": jobs.run_flows,
+            "render-replay": jobs.render_replays,
+            "capture": jobs.capture_pages,
+        }[kind]
         if kind == "run-flows":
             res = await fn(spec, max_parallel=load_config("runner")["local"]["max_parallel"])
         else:
@@ -250,6 +254,10 @@ class RunnerClient:
     async def render_replays(self, recordings: list[dict[str, Any]]) -> dict[str, Any]:
         spec = {"job_id": new_job_id("replay"), "recordings": recordings}
         return await (await self.pick()).submit("render-replay", spec)
+
+    async def capture(self, pages: list[dict[str, Any]]) -> dict[str, Any]:
+        spec = {"job_id": new_job_id("capture"), "pages": pages}
+        return await (await self.pick()).submit("capture", spec)
 
     async def describe(self) -> list[dict[str, Any]]:
         return [{"backend": b.name, "available": await b.available()} for b in self.backends]

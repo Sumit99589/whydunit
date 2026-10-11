@@ -1,8 +1,7 @@
 # Progress
 
-Current stage: **Stage 12 — The rest of the connector ladder and the Connect page** (Stages 1–3, 5, 8 and
-11 built, with their remaining "done when" checks waiting on credentials in BLOCKERS.md per rule A7.3;
-Stages 4, 6, 7, 9 and 10 done).
+Current stage: **Stage 13 — Evaluation harness** (Stages 1–3, 5, 8, 11 and 12 built, with their remaining
+"done when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages 4, 6, 7, 9 and 10 done).
 
 Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3, B4, B5, B11).
 
@@ -111,7 +110,7 @@ Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3
       false accusations; noise and weekend dip → no real drop; tracking bug → measurement; holiday red herring
       → only the holiday (`tests/test_lead.py`)
 
-## Stage 10 — The case board UI ✅
+## Stage 10 — The case board UI ✅ (ui-smoke green in CI: 1440/390 px × light/dark, live + replay)
 - [x] Design system: cool paper/slate, evidence-marker yellow, Schibsted Grotesk, numbered evidence tents
 - [x] `/` landing (pitch, looping case preview, how a case runs, what is real); `/cases`; `/cases/[id]` board:
       header with drop and status track, metric chart with cause markers, roster of seven, findings + evidence wall
@@ -129,9 +128,19 @@ Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3
       opens a case on a sustained drop and ignores noise (`tests/test_fix_verify.py`)
 - [ ] Live: watcher auto-opens, three causes, PR verified and merged, budget restored, metric recovers, case closes
 
+## Stage 12 — The rest of the ladder (built; live screen-reading run needs a runner + B1 for Omni)
+- [x] Tier 2: `Warehouse` (generic SQL via `config/warehouse.yaml`), `PyAirbyte` (Stripe charges, optional group)
+- [x] Tier 3: `CSVUpload` with Nano/rule column mapping, editable preview, confirm (admin key)
+- [x] Tier 4: `ScreenReader` (runner `capture` job → Omni, or rendered table text) on the simulated ad dashboard
+- [x] Tier 6: evidence requests on the case board with an upload link
+- [x] `/connect`: ladder per kind with the active tier, test-connection buttons, CSV upload panel
+- [x] Done when (tests): with the ads API off, the Ads detective finds the $450 → $150 cut by screen reading at
+      confidence ≤ 0.6; a Stripe-style CSV export is mapped by rules and used as the tier-3 payments source
+      (`tests/test_ladder.py`, 5 tests incl. the Omni path with a scripted vision backend)
+
 ## Last verification
 ```
-uv run pytest -q              → 74 passed
+uv run pytest -q              → 79 passed
 uv run ruff check .           → clean
 snippet: pnpm test/typecheck  → 10 passed, clean
 acme-demo: tsc + eslint       → clean

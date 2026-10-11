@@ -42,6 +42,8 @@ dev = [
     "ruff>=0.6",
     "pgserver>=0.1.4",
 ]
+# Optional: PyAirbyte for the long-tail connector (uv sync --group airbyte).
+airbyte = ["airbyte>=0.20"]
 
 [build-system]
 requires = ["hatchling"]

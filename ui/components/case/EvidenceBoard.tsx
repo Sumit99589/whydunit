@@ -43,6 +43,17 @@ export function EvidenceBoard({ s, focusDetective }: { s: CaseState; focusDetect
       <section aria-labelledby="findings-h">
         <h2 id="findings-h" className="mb-2 text-[15px] font-semibold">Findings {focusDetective && <span className="font-normal text-ink-3">from {title(focusDetective)}</span>}</h2>
         <p className="mb-3 text-[12.5px] text-ink-3">Every finding cites evidence the detectives fetched or computed. Select one to light up its evidence.</p>
+        {s.requests.length > 0 && (
+          <ul className="mb-3 space-y-2">
+            {s.requests.map((r) => (
+              <li key={r.id} className="rounded-lg border border-dashed border-marker bg-surface p-3 text-[13px]">
+                <p className="font-semibold">{title(r.detective)} detective requests evidence: {r.kind.replaceAll("_", " ")}</p>
+                <p className="mt-0.5 text-ink-2">No connected source can supply it, so the investigation carries on without it.</p>
+                <a href={`/connect?kind=${r.kind}&case=${s.id}`} className="mt-1.5 inline-block font-semibold underline">Upload a CSV export</a>
+              </li>
+            ))}
+          </ul>
+        )}
         <ol className="space-y-2">
           {findings.length === 0 && <li className="rounded-lg border border-dashed border-line p-4 text-sm text-ink-3">Findings appear here as each detective reports.</li>}
           {findings.map((f) => (

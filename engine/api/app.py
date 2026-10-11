@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from engine import db
-from engine.api import cases, ingest
+from engine.api import cases, ingest, uploads
 from engine.mock_ads import api as mock_ads_api
 from engine.settings import env
 
@@ -31,6 +31,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(ingest.router)
     app.include_router(cases.router)
+    app.include_router(uploads.router)
     app.include_router(mock_ads_api.router)
 
     @app.get("/connect")

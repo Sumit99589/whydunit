@@ -9,15 +9,19 @@ __all__ = ["NoSource", "Registry", "live_registry", "fixture_registry", "registr
 
 def live_registry() -> Registry:
     from engine.connectors.acme_db import AcmePaymentLog, Helpdesk, Reviews
+    from engine.connectors.airbyte_conn import PyAirbyte
+    from engine.connectors.csv_upload import CSVUpload
     from engine.connectors.github import GitHub
     from engine.connectors.google_ads import GoogleAds
     from engine.connectors.holidays import Holidays
     from engine.connectors.mock_ads import MockAds
     from engine.connectors.replays import Replays
+    from engine.connectors.screen_reader import ScreenReader
     from engine.connectors.statuspages import StatusPages
     from engine.connectors.stripe_conn import Stripe
     from engine.connectors.tavily_conn import Tavily
     from engine.connectors.vercel import Vercel
+    from engine.connectors.warehouse import Warehouse
     from engine.connectors.whydunit_events import WhydunitEvents
 
     return Registry(
@@ -35,6 +39,10 @@ def live_registry() -> Registry:
             Tavily(),
             Holidays(),
             StatusPages(),
+            Warehouse(),
+            PyAirbyte(),
+            CSVUpload(),
+            ScreenReader(),
         ],
         mode="live",
         label="Live Acme",

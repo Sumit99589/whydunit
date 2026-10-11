@@ -99,3 +99,43 @@ async def render_replays(spec: dict[str, Any]) -> dict[str, Any]:
     }
     await store.put(f"runs/{job}/results.json", json.dumps(out).encode(), "application/json")
     return out
+
+
+async def capture_pages(spec: dict[str, Any]) -> dict[str, Any]:
+    """Screenshot dashboards (whole page and named sections) and keep the rendered table text alongside.
+
+    Used by the screen-reading connector (tier 4) when a vendor has no API: Nemotron Nano Omni reads the
+    screenshots; the table text is the fallback when no vision model is available.
+    """
+    job = spec["job_id"]
+    store = get_blob_store()
+    t0 = time.monotonic()
+    pages = []
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        try:
+            for i, pg in enumerate(spec["pages"]):
+                ctx = await browser.new_context(viewport={"width": 1280, "height": 900})
+                page = await ctx.new_page()
+                await page.goto(pg["url"], wait_until="networkidle", timeout=30000)
+                full_key = f"runs/{job}/page{i}_full.png"
+                await store.put(full_key, await page.screenshot(type="png", full_page=True), "image/png")
+                sections = []
+                for sel in pg.get("selectors", []):
+                    loc = page.locator(sel).first
+                    if not await loc.count():
+                        continue
+                    key = f"runs/{job}/page{i}_{sel.strip('#.').replace(' ', '_')}.png"
+                    await store.put(key, await loc.screenshot(type="png"), "image/png")
+                    rows = await loc.evaluate(
+                        "el => Array.from(el.querySelectorAll('tr')).map(tr => "
+                        "Array.from(tr.querySelectorAll('th,td')).map(td => td.innerText.trim()))"
+                    )
+                    sections.append({"selector": sel, "screenshot_key": key, "rows": rows})
+                pages.append({"url": pg["url"], "screenshot_key": full_key, "sections": sections})
+                await ctx.close()
+        finally:
+            await browser.close()
+    out = {"job_id": job, "kind": "capture", "seconds": round(time.monotonic() - t0, 1), "pages": pages}
+    await store.put(f"runs/{job}/results.json", json.dumps(out).encode(), "application/json")
+    return out

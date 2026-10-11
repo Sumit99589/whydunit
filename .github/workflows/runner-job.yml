@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       kind:
-        description: run-flows or render-replay
+        description: run-flows, render-replay or capture
         required: true
       job_id:
         required: true
@@ -32,7 +32,7 @@ jobs:
     steps:
       - name: Validate inputs
         run: |
-          case "$KIND" in run-flows|render-replay) ;; *) echo "bad kind"; exit 1;; esac
+          case "$KIND" in run-flows|render-replay|capture) ;; *) echo "bad kind"; exit 1;; esac
           [[ "$JOB_ID" =~ ^[a-z]+-[0-9]{14}-[0-9a-f]{6}$ ]] || { echo "bad job id"; exit 1; }
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6

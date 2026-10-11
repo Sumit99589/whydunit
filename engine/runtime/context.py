@@ -63,12 +63,29 @@ class CaseContext:
             await self.log.emit(
                 "cannot_determine", detective, kind=kind, reason=str(e), ladder=[s.__dict__ for s in e.ladder]
             )
+            await self.request_evidence(kind, detective, str(e))
             raise
         if bundle.id not in self.evidence:
             self.evidence[bundle.id] = bundle
             await ev.save_evidence(self.case.id, bundle, detective)
             await self.log.emit("evidence_pinned", detective, evidence=bundle.public())
         return bundle
+
+    async def request_evidence(self, kind: str, detective: str, reason: str) -> None:
+        """Tier 6: ask a human. The case shows an upload card for the kind and carries on without it."""
+        from engine import db
+        from engine.runtime.schemas import new_id
+
+        rid = new_id("req")
+        row = await db.fetchrow(
+            "INSERT INTO evidence_requests (id, case_id, kind, detective, reason) VALUES (%s,%s,%s,%s,%s) "
+            "ON CONFLICT (case_id, kind) DO NOTHING RETURNING id",
+            (rid, self.case.id, kind, detective, reason[:500]),
+        )
+        if row:
+            await self.log.emit(
+                "evidence_requested", detective, request={"id": rid, "kind": kind, "reason": reason[:300]}
+            )
 
     def add_derived(self, bundle: EvidenceBundle) -> None:
         self.evidence[bundle.id] = bundle

@@ -7,6 +7,27 @@ interface Kind { kind: string; active: string | null; active_tier: number | null
 
 const TIER_NAMES: Record<number, string> = { 1: "Official API", 2: "Warehouse", 3: "CSV export", 4: "Screen reading", 5: "Public web", 6: "Ask a human" };
 
+function TestButton({ kind }: { kind: string }) {
+  const [res, setRes] = useState<{ ok: boolean; summary?: string; message?: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  return (
+    <div className="mt-1">
+      <button
+        onClick={async () => {
+          setBusy(true);
+          const r = await fetch("/engine/connect/test", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind }) });
+          setRes(await r.json().catch(() => ({ ok: false, message: "No answer from the engine." })));
+          setBusy(false);
+        }}
+        className="text-[12px] underline decoration-line underline-offset-2 hover:decoration-ink"
+      >
+        {busy ? "Testing…" : "Test connection"}
+      </button>
+      {res && <p className={`text-[12px] ${res.ok ? "text-ink-2" : "text-fail"}`}>{res.ok ? res.summary : res.message}</p>}
+    </div>
+  );
+}
+
 export function Ladder() {
   const [data, setData] = useState<{ kinds: Kind[]; runner: { backend: string; available: boolean }[] } | null>(null);
   const [error, setError] = useState(false);
@@ -25,6 +46,7 @@ export function Ladder() {
               <div className={`text-[12.5px] ${k.active ? "text-pass" : "text-fail"}`}>
                 {k.active ? `Using ${k.active.replaceAll("_", " ")} (${TIER_NAMES[k.active_tier!]})` : "No source: detectives will say they cannot determine this"}
               </div>
+              <TestButton kind={k.kind} />
             </div>
             <ol className="flex flex-wrap gap-1.5 text-[12px]">
               {k.ladder.map((s) => (

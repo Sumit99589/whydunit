@@ -37,3 +37,9 @@ async def render_replay(
 ) -> dict[str, Any]:
     _auth(x_runner_token)
     return await jobs.render_replays(spec)
+
+
+@app.post("/capture")
+async def capture(spec: dict[str, Any], x_runner_token: str | None = Header(default=None)) -> dict[str, Any]:
+    _auth(x_runner_token)
+    return await jobs.capture_pages(spec)

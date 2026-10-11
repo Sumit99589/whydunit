@@ -1,0 +1,27 @@
+# Tier 2: a generic SQL warehouse. Each evidence kind maps to a table and its columns (schema column: SQL expr).
+# Point WAREHOUSE_URL at any Postgres-compatible warehouse (Neon, Redshift via a PG endpoint, …). For the demo it
+# can be the same database as the engine: Acme's own tables then double as a "warehouse".
+dsn_env: WAREHOUSE_URL
+kinds:
+  support_tickets:
+    table: acme.helpdesk_tickets
+    time_column: created_at
+    columns: {id: id, created_at: created_at, subject: subject, body: body, channel: channel}
+  reviews:
+    table: acme.reviews
+    time_column: created_at
+    columns: {id: id, created_at: created_at, platform: platform, rating: rating, title: title, body: body}
+  payments:
+    table: acme.payment_attempts
+    time_column: created_at
+    columns:
+      id: id
+      created: created_at
+      amount: amount_cents
+      currency: currency
+      status: "CASE WHEN outcome = 'succeeded' THEN 'succeeded' ELSE 'requires_payment_method' END"
+      outcome_type: "CASE outcome WHEN 'succeeded' THEN 'authorized' WHEN 'declined' THEN 'issuer_declined' ELSE 'api_error' END"
+      decline_code: decline_code
+      card_brand: card_brand
+      card_country: card_country
+      country: card_country
