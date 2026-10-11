@@ -1,0 +1,14 @@
+# Three permanent Vercel deployments of Acme, so flow runs stay real even in fixture worlds (Stage 4).
+# Fill `url` once acme-demo is on Vercel (BLOCKERS B4): deploy each sha once and keep the immutable URL.
+healthy:
+  sha: 974c8cf
+  ref: main
+  url: null
+safari-broken:
+  sha: 2bdecd6
+  ref: refactor/signup-idle-hydration
+  url: null
+slow-checkout:
+  sha: null        # branch to be created in Stage 17
+  ref: experiment/slow-checkout
+  url: null

@@ -1,0 +1,374 @@
+{
+ "source": "https://date.nager.at/api/v3/PublicHolidays/2026/{country} (fetched 2026-10-11; India not covered by Nager.Date)",
+ "holidays": [
+  {
+   "date": "2026-01-01",
+   "country": "BR",
+   "name": "New Year's Day",
+   "local_name": "Confraterniza\u00e7\u00e3o Universal"
+  },
+  {
+   "date": "2026-01-01",
+   "country": "CA",
+   "name": "New Year's Day",
+   "local_name": "New Year's Day"
+  },
+  {
+   "date": "2026-01-01",
+   "country": "DE",
+   "name": "New Year's Day",
+   "local_name": "Neujahr"
+  },
+  {
+   "date": "2026-01-01",
+   "country": "FR",
+   "name": "New Year's Day",
+   "local_name": "Jour de l'an"
+  },
+  {
+   "date": "2026-01-01",
+   "country": "US",
+   "name": "New Year's Day",
+   "local_name": "New Year's Day"
+  },
+  {
+   "date": "2026-01-19",
+   "country": "US",
+   "name": "Martin Luther King, Jr. Day",
+   "local_name": "Martin Luther King, Jr. Day"
+  },
+  {
+   "date": "2026-01-26",
+   "country": "IN",
+   "name": "Republic Day",
+   "local_name": "Republic Day",
+   "source": "manual"
+  },
+  {
+   "date": "2026-02-16",
+   "country": "BR",
+   "name": "Carnival",
+   "local_name": "Carnaval"
+  },
+  {
+   "date": "2026-02-16",
+   "country": "US",
+   "name": "Presidents Day",
+   "local_name": "Washington's Birthday"
+  },
+  {
+   "date": "2026-02-17",
+   "country": "BR",
+   "name": "Carnival",
+   "local_name": "Carnaval"
+  },
+  {
+   "date": "2026-04-03",
+   "country": "BR",
+   "name": "Good Friday",
+   "local_name": "Sexta-feira Santa"
+  },
+  {
+   "date": "2026-04-03",
+   "country": "CA",
+   "name": "Good Friday",
+   "local_name": "Good Friday"
+  },
+  {
+   "date": "2026-04-03",
+   "country": "DE",
+   "name": "Good Friday",
+   "local_name": "Karfreitag"
+  },
+  {
+   "date": "2026-04-03",
+   "country": "GB",
+   "name": "Good Friday",
+   "local_name": "Good Friday"
+  },
+  {
+   "date": "2026-04-05",
+   "country": "BR",
+   "name": "Easter Sunday",
+   "local_name": "Domingo de P\u00e1scoa"
+  },
+  {
+   "date": "2026-04-06",
+   "country": "DE",
+   "name": "Easter Monday",
+   "local_name": "Ostermontag"
+  },
+  {
+   "date": "2026-04-06",
+   "country": "FR",
+   "name": "Easter Monday",
+   "local_name": "Lundi de P\u00e2ques"
+  },
+  {
+   "date": "2026-04-21",
+   "country": "BR",
+   "name": "Tiradentes",
+   "local_name": "Dia de Tiradentes"
+  },
+  {
+   "date": "2026-05-01",
+   "country": "BR",
+   "name": "Labour Day",
+   "local_name": "Dia do Trabalhador"
+  },
+  {
+   "date": "2026-05-01",
+   "country": "DE",
+   "name": "Labour Day",
+   "local_name": "Tag der Arbeit"
+  },
+  {
+   "date": "2026-05-01",
+   "country": "FR",
+   "name": "Labour Day",
+   "local_name": "F\u00eate du Travail"
+  },
+  {
+   "date": "2026-05-04",
+   "country": "GB",
+   "name": "Early May Bank Holiday",
+   "local_name": "Early May Bank Holiday"
+  },
+  {
+   "date": "2026-05-08",
+   "country": "FR",
+   "name": "Victory in Europe Day",
+   "local_name": "Victoire 1945"
+  },
+  {
+   "date": "2026-05-14",
+   "country": "DE",
+   "name": "Ascension Day",
+   "local_name": "Christi Himmelfahrt"
+  },
+  {
+   "date": "2026-05-14",
+   "country": "FR",
+   "name": "Ascension Day",
+   "local_name": "Ascension"
+  },
+  {
+   "date": "2026-05-18",
+   "country": "CA",
+   "name": "Victoria Day",
+   "local_name": "Victoria Day"
+  },
+  {
+   "date": "2026-05-25",
+   "country": "DE",
+   "name": "Whit Monday",
+   "local_name": "Pfingstmontag"
+  },
+  {
+   "date": "2026-05-25",
+   "country": "FR",
+   "name": "Whit Monday",
+   "local_name": "Lundi de Pentec\u00f4te"
+  },
+  {
+   "date": "2026-05-25",
+   "country": "GB",
+   "name": "Spring Bank Holiday",
+   "local_name": "Spring Bank Holiday"
+  },
+  {
+   "date": "2026-05-25",
+   "country": "US",
+   "name": "Memorial Day",
+   "local_name": "Memorial Day"
+  },
+  {
+   "date": "2026-06-04",
+   "country": "BR",
+   "name": "Corpus Christi",
+   "local_name": "Corpus Christi"
+  },
+  {
+   "date": "2026-06-19",
+   "country": "US",
+   "name": "Juneteenth National Independence Day",
+   "local_name": "Juneteenth National Independence Day"
+  },
+  {
+   "date": "2026-07-01",
+   "country": "CA",
+   "name": "Canada Day",
+   "local_name": "Canada Day"
+  },
+  {
+   "date": "2026-07-03",
+   "country": "US",
+   "name": "Independence Day",
+   "local_name": "Independence Day"
+  },
+  {
+   "date": "2026-07-14",
+   "country": "FR",
+   "name": "Bastille Day",
+   "local_name": "F\u00eate nationale"
+  },
+  {
+   "date": "2026-08-15",
+   "country": "FR",
+   "name": "Assumption Day",
+   "local_name": "Assomption"
+  },
+  {
+   "date": "2026-08-15",
+   "country": "IN",
+   "name": "Independence Day",
+   "local_name": "Independence Day",
+   "source": "manual"
+  },
+  {
+   "date": "2026-09-07",
+   "country": "BR",
+   "name": "Independence Day",
+   "local_name": "Dia da Independ\u00eancia"
+  },
+  {
+   "date": "2026-09-07",
+   "country": "CA",
+   "name": "Labour Day",
+   "local_name": "Labour Day"
+  },
+  {
+   "date": "2026-09-07",
+   "country": "US",
+   "name": "Labour Day",
+   "local_name": "Labor Day"
+  },
+  {
+   "date": "2026-09-30",
+   "country": "CA",
+   "name": "National Day for Truth and Reconciliation",
+   "local_name": "National Day for Truth and Reconciliation"
+  },
+  {
+   "date": "2026-10-02",
+   "country": "IN",
+   "name": "Gandhi Jayanti",
+   "local_name": "Gandhi Jayanti",
+   "source": "manual"
+  },
+  {
+   "date": "2026-10-03",
+   "country": "DE",
+   "name": "German Unity Day",
+   "local_name": "Tag der Deutschen Einheit"
+  },
+  {
+   "date": "2026-10-12",
+   "country": "BR",
+   "name": "Our Lady of Aparecida",
+   "local_name": "Nossa Senhora Aparecida"
+  },
+  {
+   "date": "2026-10-12",
+   "country": "CA",
+   "name": "Thanksgiving",
+   "local_name": "Thanksgiving"
+  },
+  {
+   "date": "2026-10-12",
+   "country": "US",
+   "name": "Columbus Day",
+   "local_name": "Columbus Day"
+  },
+  {
+   "date": "2026-11-01",
+   "country": "FR",
+   "name": "All Saints' Day",
+   "local_name": "Toussaint"
+  },
+  {
+   "date": "2026-11-02",
+   "country": "BR",
+   "name": "All Souls' Day",
+   "local_name": "Dia de Finados"
+  },
+  {
+   "date": "2026-11-11",
+   "country": "FR",
+   "name": "Armistice Day",
+   "local_name": "Armistice 1918"
+  },
+  {
+   "date": "2026-11-11",
+   "country": "US",
+   "name": "Veterans Day",
+   "local_name": "Veterans Day"
+  },
+  {
+   "date": "2026-11-15",
+   "country": "BR",
+   "name": "Republic Proclamation Day",
+   "local_name": "Proclama\u00e7\u00e3o da Rep\u00fablica"
+  },
+  {
+   "date": "2026-11-20",
+   "country": "BR",
+   "name": "Black Awareness Day",
+   "local_name": "Dia da Consci\u00eancia Negra"
+  },
+  {
+   "date": "2026-11-26",
+   "country": "US",
+   "name": "Thanksgiving Day",
+   "local_name": "Thanksgiving Day"
+  },
+  {
+   "date": "2026-12-25",
+   "country": "BR",
+   "name": "Christmas Day",
+   "local_name": "Natal"
+  },
+  {
+   "date": "2026-12-25",
+   "country": "CA",
+   "name": "Christmas Day",
+   "local_name": "Christmas Day"
+  },
+  {
+   "date": "2026-12-25",
+   "country": "DE",
+   "name": "Christmas Day",
+   "local_name": "Erster Weihnachtstag"
+  },
+  {
+   "date": "2026-12-25",
+   "country": "FR",
+   "name": "Christmas Day",
+   "local_name": "No\u00ebl"
+  },
+  {
+   "date": "2026-12-25",
+   "country": "GB",
+   "name": "Christmas Day",
+   "local_name": "Christmas Day"
+  },
+  {
+   "date": "2026-12-25",
+   "country": "US",
+   "name": "Christmas Day",
+   "local_name": "Christmas Day"
+  },
+  {
+   "date": "2026-12-26",
+   "country": "DE",
+   "name": "St. Stephen's Day",
+   "local_name": "Zweiter Weihnachtstag"
+  },
+  {
+   "date": "2026-12-28",
+   "country": "GB",
+   "name": "St. Stephen's Day",
+   "local_name": "Boxing Day"
+  }
+ ]
+}

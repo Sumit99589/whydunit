@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import sys
 
 
@@ -34,6 +35,31 @@ def _project_create(args: argparse.Namespace) -> int:
     return 0
 
 
+def _world_create(args: argparse.Namespace) -> int:
+    from datetime import date
+
+    from engine.fixtures.world import WorldSpec, generate
+
+    if args.preset:
+        spec = WorldSpec.preset(args.preset)
+    else:
+        if not args.incidents:
+            raise SystemExit("--incidents or --preset is required")
+        spec = WorldSpec(
+            name=args.name or "custom",
+            start=date.fromisoformat(args.start),
+            days=args.days,
+            incidents=args.incidents,
+            seed=args.seed,
+        )
+    res = generate(spec, ground_truth=not args.no_truth)
+    print(f"world {spec.name} -> {res.path} in {res.seconds:.1f}s")
+    for table, n in sorted(res.counts.items()):
+        print(f"  {table:16} {n:>8,}")
+    print(json.dumps({"case": res.meta["case"], "truth": res.meta["truth"]}, indent=2))
+    return 0
+
+
 def _serve(args: argparse.Namespace) -> int:
     import uvicorn
 
@@ -56,6 +82,17 @@ def build_parser() -> argparse.ArgumentParser:
     pc.add_argument("name")
     pc.add_argument("--key", help="use this key instead of generating one")
     pc.set_defaults(func=_project_create)
+
+    wp = sub.add_parser("world").add_subparsers(dest="world_cmd", required=True)
+    wc = wp.add_parser("create", help="generate a fixture world into .cache/worlds/<name>.duckdb")
+    wc.add_argument("--preset", help="named world from config/worlds.yaml, e.g. 3inc")
+    wc.add_argument("--incidents", help="e.g. deploy_bug:webkit,ads_budget_cap,payment_declines:BR")
+    wc.add_argument("--start", default="2026-09-14")
+    wc.add_argument("--days", type=int, default=14)
+    wc.add_argument("--name")
+    wc.add_argument("--seed", type=int, default=7)
+    wc.add_argument("--no-truth", action="store_true", help="skip the counterfactual ground-truth worlds")
+    wc.set_defaults(func=_world_create)
 
     sp = sub.add_parser("serve")
     sp.add_argument("--host", default="127.0.0.1")

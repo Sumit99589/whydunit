@@ -1,7 +1,7 @@
 # Progress
 
-Current stage: **Stage 4 — Fixture worlds** (Stages 1–3 built; their "done when" checks wait on
-credentials in BLOCKERS.md, per rule A7.3).
+Current stage: **Stage 5 — Evidence layer and connectors** (Stages 1–3 built, with their "done when"
+checks waiting on credentials in BLOCKERS.md per rule A7.3; Stage 4 done).
 
 Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3, B4, B5, B11).
 
@@ -38,9 +38,22 @@ Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3
 - [x] Engine container (`Dockerfile`, GHCR workflow, `render.yaml`)
 - [ ] **Start it** (B2, B3, B4, B5, B11) and confirm 6 consecutive clean ticks
 
+## Stage 4 — Fixture worlds ✅
+- [x] `engine/fixtures/world.py`: DuckDB worlds with events, sessions, users, payments (Stripe-shaped),
+      synthetic rrweb replays, deployments with diffs and per-browser flow results, ads (campaigns, hourly,
+      change events), tickets, reviews, news, real holidays, status incidents, and `meta` ground truth
+- [x] Incident library (`engine/fixtures/incidents.py`): deploy_bug(engine), ads_budget_cap,
+      payment_declines(country), public_holiday(country), dependency_outage(service), competitor_launch,
+      tracking_bug, seasonality_only, noise_only, harmless_deploy, checkout_slow
+- [x] Exact Shapley ground truth over counterfactual worlds (common random numbers) — 3inc: Safari bug
+      65.4%, ads cap 28.8%, BR declines 5.8% of 146 lost paid subs
+- [x] Presets in `config/worlds.yaml` (one per eval scenario); CLI `uv run whydunit world create`
+- [x] Done when: every preset generates in < 30 s (3inc with truth: ~7 s); `tests/test_world.py` asserts
+      each incident's signal (10 tests)
+
 ## Last verification
 ```
-uv run pytest -q              → 20 passed
+uv run pytest -q              → 30 passed (43 s)
 uv run ruff check .           → clean
 snippet: pnpm test/typecheck  → 10 passed, clean
 acme-demo: tsc + eslint       → clean

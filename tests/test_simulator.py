@@ -29,7 +29,7 @@ def test_payment_declines_window_and_mitigation():
     start = datetime(2026, 10, 1, tzinfo=UTC)
     fired = {"payment_declines": {"at": "x"}}
     assert payment_declines_active(s, start, fired, {}, start + timedelta(days=4)) == {}
-    assert payment_declines_active(s, start, fired, {}, start + timedelta(days=6)) == {"BR": 0.18}
+    assert payment_declines_active(s, start, fired, {}, start + timedelta(days=6)) == {"BR": 0.30}
     assert payment_declines_active(s, start, fired, {}, start + timedelta(days=10)) == {}
     assert (
         payment_declines_active(s, start, fired, {"payment_declines": "y"}, start + timedelta(days=6)) == {}

@@ -52,3 +52,29 @@ Non-obvious choices and why. Items marked **revisit** are simplifications to com
 - **D16. Incident messages are emergent**: support tickets and reviews about the incidents come from a
   share of the visitors whose signup was actually blocked or whose card was actually declined, not from a
   script.
+
+## Stage 4
+
+- **D17. Common random numbers.** Every visitor draws a fixed vector of uniforms, arrivals are drawn at
+  1.6× the base rate and thinned, and ad clicks and CPCs are drawn before the budget is applied. So the
+  same seed with any subset of incidents switched off is the *exact* counterfactual world. Ground-truth
+  shares are exact Shapley values of lost paid subscriptions over those 2^k worlds, computed per day
+  (per-day seeds) over the case window only. The 3-incident world, including its 8 counterfactuals,
+  generates in about 7 s.
+- **D18. Case baseline is week-over-week by default** (the same weekdays one week earlier), the standard
+  growth-analytics comparison that removes the weekly cycle. The seasonality scenarios use the preceding
+  weekdays instead, on purpose, to test that Whydunit recognises a weekend dip.
+- **D19. Payment-declines incident tuned to 3% → 30% for Brazil, with Brazil at 15% of traffic** (the plan
+  said "about 18%"). At 18% the true share was 1.6% of the drop, too small to be a meaningful cause. Now
+  the flagship's true shares are about 65% Safari bug, 29% ads cap, 6% Brazil declines. The same values
+  are used by the live simulator.
+- **D20. Fixture news and status incidents are clearly fictional** (example.com sources, a fictional
+  competitor "Quillboard"), so fixtures never invent claims about real companies. Holidays are real
+  (Nager.Date 2026, plus India's three national holidays added by hand because Nager.Date lacks India).
+- **D21. Fixture session recordings are synthesised rrweb streams** of the signup page (valid snapshots,
+  inputs, clicks, navigations; blocked users show repeated clicks with no DOM change). Live recordings come
+  from real browsers. Fixture flow results are recorded per deployment until the three permanent Acme
+  deployments exist (B4), when `config/fixture_deployments.yaml` gets their URLs and flows run for real
+  (**revisit**).
+- **D22. pytest temp dirs live in `.cache/pytest`**: `/tmp` is RAM-backed here and fixture worlds are
+  ~10 MB each.

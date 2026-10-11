@@ -1,0 +1,57 @@
+# Named fixture worlds (PLAN Stage 4 / Stage 13 scenarios). `fixture:<name>` anywhere a world is expected.
+# start is the first day (UTC); days is the length; incidents use the CLI syntax kind[:arg][:k=v][@offset].
+3inc:
+  description: The flagship. Safari signup bug, ads budget cap, Brazil payment declines.
+  start: 2026-09-14
+  days: 14
+  incidents: deploy_bug:webkit,ads_budget_cap,payment_declines:BR
+deploy_only:
+  description: Safari signup bug only.
+  start: 2026-09-14
+  days: 14
+  incidents: deploy_bug:webkit
+ads_only:
+  description: Ads budget cap only.
+  start: 2026-09-14
+  days: 14
+  incidents: ads_budget_cap
+payments_only:
+  description: Brazil payment declines only.
+  start: 2026-09-14
+  days: 14
+  incidents: payment_declines:BR
+holiday_red_herring:
+  description: German Unity Day cuts German traffic; a harmless deploy lands the same morning.
+  start: 2026-09-20
+  days: 14
+  incidents: public_holiday:DE@13d,harmless_deploy@13d9h30m
+noise:
+  description: No real change, just noise.
+  start: 2026-09-14
+  days: 14
+  incidents: noise_only
+outage:
+  description: A payments-provider outage for six hours, visible on its status page.
+  start: 2026-09-14
+  days: 14
+  incidents: dependency_outage:stripe
+competitor:
+  description: A (fictional) competitor launches a free tier; signup intent drops.
+  start: 2026-09-14
+  days: 14
+  incidents: competitor_launch
+tracking:
+  description: The snippet stops sending signup_completed; real signups and revenue are fine.
+  start: 2026-09-14
+  days: 14
+  incidents: tracking_bug
+seasonality_small_bug:
+  description: Weekend dip plus a small real bug (Firefox signup broken).
+  start: 2026-09-14
+  days: 14
+  incidents: deploy_bug:firefox@12d10h
+seasonality:
+  description: Weekend dip only; nothing is wrong.
+  start: 2026-09-14
+  days: 14
+  incidents: seasonality_only

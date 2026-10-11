@@ -17,7 +17,7 @@ def test_budget_cap_reduces_afternoon_clicks():
         day,
         day + timedelta(days=1),
         spent_before=0,
-        budget_at=lambda t: 400,
+        budget_at=lambda t: 450,
         rng=np.random.default_rng(3),
     )
     capped = simulate(
@@ -52,11 +52,11 @@ async def test_budget_change_timeline_and_reports(ads):
         "/mock-ads/api/campaigns/1002/budget",
         json={"amount": 150, "user_email": "jordan@acme-notes.test", "client_type": "GOOGLE_ADS_WEB_CLIENT"},
     )
-    assert r.status_code == 200 and r.json()["old"] == 400 and r.json()["new"] == 150
+    assert r.status_code == 200 and r.json()["old"] == 450 and r.json()["new"] == 150
     tl = await store.budget_timeline("1002", t0)
-    assert tl[0][1] == 400 and tl[-1][1] == 150
+    assert tl[0][1] == 450 and tl[-1][1] == 150
     fn = store.budget_fn(tl)
-    assert fn(t0) == 400 and fn(datetime.now(UTC) + timedelta(seconds=5)) == 150
+    assert fn(t0) == 450 and fn(datetime.now(UTC) + timedelta(seconds=5)) == 150
 
     hours = simulate(
         DEFAULT_CAMPAIGNS[1],

@@ -37,11 +37,11 @@ PLATFORMS: list[tuple[str, str, str, str, float]] = [
 ]
 
 COUNTRIES: list[tuple[str, float]] = [
-    ("US", 0.38),
+    ("US", 0.36),
     ("GB", 0.12),
-    ("IN", 0.14),
+    ("IN", 0.13),
     ("DE", 0.10),
-    ("BR", 0.12),
+    ("BR", 0.15),
     ("CA", 0.07),
     ("FR", 0.07),
 ]
@@ -211,6 +211,13 @@ class WorldModel:
         rng = np.random.default_rng(int.from_bytes(digest[:4], "big"))
         return float(math.exp(rng.normal(0, self.noise_sd)))
 
+    # Arrivals are drawn at HEADROOM x the baseline rate and thinned by each condition's multiplier, and
+    # every visitor consumes a fixed vector of uniforms. Incidents therefore only move thresholds: the
+    # same seed with incidents switched off is the exact counterfactual world (common random numbers),
+    # which is how fixture worlds compute ground-truth Shapley shares.
+    HEADROOM = 1.6
+    N_UNIFORMS = 16
+
     def journeys(
         self,
         start: datetime,
@@ -227,44 +234,45 @@ class WorldModel:
         """
         rng = rng or np.random.default_rng(self.seed)
         cond_at = conditions or (lambda t: Conditions())
-        arrivals: list[tuple[datetime, str, str | None, str | None, str | None]] = []
+        arrivals: list[tuple[datetime, str, str | None, str | None, str | None, float]] = []
+        referrers = ["news.ycombinator.com", "producthunt.com", "reddit.com", "twitter.com"]
 
-        # Unpaid arrivals, hour by hour (Poisson around the curve, with daily noise).
         t = start
         while t < end:
             nxt = min(end, (t + timedelta(hours=1)).replace(minute=0, second=0, microsecond=0))
-            c = cond_at(t)
-            lam = self.expected_unpaid_visitors(t, nxt) * self.day_noise(t) * c.traffic_mult
+            lam = self.expected_unpaid_visitors(t, nxt) * self.day_noise(t) * self.HEADROOM
             n = int(rng.poisson(max(lam, 0.0)))
             span = (nxt - t).total_seconds()
-            for _ in range(n):
-                ts = t + timedelta(seconds=float(rng.uniform(0, span)))
-                if rng.random() < self.referral_share:
-                    src = str(
-                        rng.choice(["news.ycombinator.com", "producthunt.com", "reddit.com", "twitter.com"])
-                    )
-                    arrivals.append((ts, "referral", src, "referral", None))
+            u = rng.random((n, 3))
+            for k in range(n):
+                ts = t + timedelta(seconds=float(u[k, 0] * span))
+                keep = u[k, 1]  # thinned below against the condition's traffic multiplier
+                if u[k, 2] < self.referral_share:
+                    src = referrers[int(u[k, 2] / self.referral_share * len(referrers)) % len(referrers)]
+                    arrivals.append((ts, "referral", src, "referral", None, keep))
                 else:
-                    arrivals.append((ts, "organic", None, None, None))
+                    arrivals.append((ts, "organic", None, None, None, keep))
             t = nxt
         for ts, campaign in paid_clicks or []:
             if start <= ts < end:
-                arrivals.append((ts, "paid", "google", "cpc", campaign))
+                arrivals.append((ts, "paid", "google", "cpc", campaign, -1.0))
         arrivals.sort(key=lambda a: a[0])
 
-        plat_w = np.array([p[4] for p in PLATFORMS])
-        plat_w = plat_w / plat_w.sum()
-        ctry_w = np.array([c[1] for c in COUNTRIES])
-        ctry_w = ctry_w / ctry_w.sum()
+        plat_cdf = np.cumsum([p[4] for p in PLATFORMS])
+        plat_cdf = plat_cdf / plat_cdf[-1]
+        ctry_cdf = np.cumsum([c[1] for c in COUNTRIES])
+        ctry_cdf = ctry_cdf / ctry_cdf[-1]
+        uniforms = rng.random((len(arrivals), self.N_UNIFORMS))
 
         out: list[Journey] = []
-        for i, (ts, channel, src, medium, campaign) in enumerate(arrivals):
+        for i, (ts, channel, src, medium, campaign, keep) in enumerate(arrivals):
             c = cond_at(ts)
-            device, os_, browser, engine, _ = PLATFORMS[int(rng.choice(len(PLATFORMS), p=plat_w))]
-            country = COUNTRIES[int(rng.choice(len(COUNTRIES), p=ctry_w))][0]
-            # Country-specific traffic drops (holidays) thin arrivals from that country.
-            keep = c.country_traffic_mult.get(country, 1.0)
-            if keep < 1.0 and rng.random() > keep:
+            u = uniforms[i]
+            if keep >= 0 and keep * self.HEADROOM >= c.traffic_mult:
+                continue
+            device, os_, browser, engine, _ = PLATFORMS[int(np.searchsorted(plat_cdf, u[0], side="right"))]
+            country = COUNTRIES[int(np.searchsorted(ctry_cdf, u[1], side="right"))][0]
+            if u[2] >= c.country_traffic_mult.get(country, 1.0):
                 continue
             vid = _stable_id("a", self.seed, ts.isoformat(), i)
             j = Journey(
@@ -281,41 +289,46 @@ class WorldModel:
                 utm_medium=medium,
                 utm_campaign=campaign,
             )
-            self._walk(j, c, rng)
+            self._walk(j, c, u)
             out.append(j)
         return out
 
-    def _walk(self, j: Journey, c: Conditions, rng: np.random.Generator) -> None:
+    def _walk(self, j: Journey, c: Conditions, u: np.ndarray) -> None:
+        """Walk the funnel using this visitor's fixed uniforms u[3:]."""
         r = self.rates
+
+        def secs(k: int, lo: float, hi: float) -> timedelta:
+            return timedelta(seconds=float(lo + u[k] * (hi - lo)))
+
         t = j.arrived_at
         j.events.append(Event("page_view", t, {"title": "Acme Notes"}, "/"))
-        if rng.random() < r.pricing_view:
-            t += timedelta(seconds=float(rng.uniform(15, 90)))
+        if u[3] < r.pricing_view:
+            t += secs(4, 15, 90)
             j.events.append(Event("page_view", t, {"title": "Pricing"}, "/pricing"))
         p_start = r.start_signup[j.device] * c.start_signup_mult
         if j.channel == "paid":
             p_start *= r.paid_start_multiplier
-        if rng.random() >= p_start:
+        if u[5] >= p_start:
             return
-        t += timedelta(seconds=float(rng.uniform(20, 150)))
+        t += secs(6, 20, 150)
         j.events.append(Event("page_view", t, {"title": "Sign up"}, "/signup"))
-        t += timedelta(seconds=float(rng.uniform(5, 40)))
+        t += secs(7, 5, 40)
         j.events.append(Event("signup_started", t, {"form": "signup"}, "/signup"))
-        if rng.random() >= r.complete_signup:
+        if u[8] >= r.complete_signup:
             return
         if not c.signup_ok.get(j.probe, True):
             j.signup_blocked = True
             return
-        t += timedelta(seconds=float(rng.uniform(15, 60)))
+        t += secs(9, 15, 60)
         j.signed_up = True
         j.tracked_completed = c.track_signup_completed
         if c.track_signup_completed:
             j.events.append(Event("signup_completed", t, {}, "/signup"))
-        t += timedelta(seconds=float(rng.uniform(2, 6)))
+        t += secs(10, 2, 6)
         j.events.append(Event("page_view", t, {"title": "Welcome"}, "/onboarding"))
-        if rng.random() >= r.start_checkout * c.checkout_mult:
+        if u[11] >= r.start_checkout * c.checkout_mult:
             return
-        t += timedelta(seconds=float(rng.uniform(40, 400)))
+        t += secs(12, 40, 400)
         j.checkout = True
         j.events.append(Event("page_view", t, {"title": "Checkout"}, "/checkout"))
         j.events.append(
@@ -326,22 +339,22 @@ class WorldModel:
                 "/checkout",
             )
         )
-        t += timedelta(seconds=float(rng.uniform(25, 120)) * (6 if c.checkout_slow else 1))
+        t += secs(13, 25, 120) * (6 if c.checkout_slow else 1)
         decline_rate = c.decline_rate_by_country.get(j.country, r.base_decline_rate)
-        u = rng.random()
-        if u < r.error_rate + c.extra_error_rate:
-            j.payment_outcome, j.decline_code = "error", "api_error"
-            j.payment_method = "pm_card_visa"
-        elif u < r.error_rate + c.extra_error_rate + decline_rate:
+        err = r.error_rate + c.extra_error_rate
+        x = u[14]
+        if x < err:
+            j.payment_outcome, j.decline_code, j.payment_method = "error", "api_error", "pm_card_visa"
+        elif x < err + decline_rate:
             issuer = j.country in c.decline_rate_by_country
             codes = DECLINE_CODES_ISSUER if issuer else DECLINE_CODES_BASE
-            names, w = zip(*codes, strict=True)
-            code = str(rng.choice(names, p=np.array(w) / sum(w)))
+            cdf = np.cumsum([w for _, w in codes])
+            code = codes[int(np.searchsorted(cdf / cdf[-1], u[15], side="right"))][0]
             j.payment_outcome, j.decline_code = "declined", code
             j.payment_method = PM_FOR_DECLINE[code]
         else:
             j.payment_outcome = "succeeded"
-            j.payment_method = str(rng.choice(PM_SUCCESS))
+            j.payment_method = PM_SUCCESS[int(u[15] * len(PM_SUCCESS)) % len(PM_SUCCESS)]
         if j.payment_outcome == "succeeded":
             j.events.append(Event("payment_succeeded", t, {"plan": "pro", "amount_cents": 1200}, "/checkout"))
         else:
