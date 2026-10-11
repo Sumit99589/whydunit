@@ -1,5 +1,5 @@
 {
-  "simulator_start": "2026-10-11T14:47:34.220676+00:00",
+  "simulator_start": "2026-10-11T16:51:36.474406+00:00",
   "note": "Written by the live simulator. Times are UTC. Used to score the live case.",
   "incidents": [
     {
@@ -12,7 +12,7 @@
           "engine": "webkit"
         }
       },
-      "scheduled_at": "2026-10-15T14:47:34.220676+00:00",
+      "scheduled_at": "2026-10-15T16:51:36.474406+00:00",
       "fired_at": null,
       "details": null,
       "scheduled_end": null,
@@ -28,7 +28,7 @@
           "channel": "paid"
         }
       },
-      "scheduled_at": "2026-10-16T02:47:34.220676+00:00",
+      "scheduled_at": "2026-10-16T04:51:36.474406+00:00",
       "fired_at": null,
       "details": null,
       "scheduled_end": null,
@@ -44,10 +44,10 @@
           "country": "BR"
         }
       },
-      "scheduled_at": "2026-10-16T14:47:34.220676+00:00",
+      "scheduled_at": "2026-10-16T16:51:36.474406+00:00",
       "fired_at": null,
       "details": null,
-      "scheduled_end": "2026-10-20T14:47:34.220676+00:00",
+      "scheduled_end": "2026-10-20T16:51:36.474406+00:00",
       "mitigated_at": null
     }
   ]
