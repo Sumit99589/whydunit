@@ -1,7 +1,16 @@
 # Progress
 
-Current stage: **Stage 16 — Submission package** (Stages 1–3, 5, 8, 11, 12 and 14 built, with their remaining
-"done when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages 4, 6, 7, 9, 10, 13 and 15 done).
+Current stage: **Waiting on human prerequisites** (BLOCKERS.md). Every stage that can be built without
+credentials is built and verified (Stages 4, 6, 7, 9, 10, 13, 15 done; 1–3, 5, 8, 11, 12, 14 built; 16 written).
+Stage 17 starts only after the submission is drafted on Devpost (PLAN), which needs the human.
+
+**When credentials arrive, in this order:**
+1. B2 + B3 + B4 + B5 + B11 → push acme-demo, set GitHub Actions secrets from `.env`, run migrations on Neon,
+   start the simulator (record the start time here); watch for 6 clean ticks.
+2. B1 → `scripts/discover_models.py --write`, `scripts/smoke_llm.py`; rerun `whydunit evals run` in LLM mode.
+3. B8 → Tavily cassettes; B7 → real Stripe declines; B6 + B9 → runner as a Nebius Serverless Job.
+4. At T+5.5d the watcher should auto-open the flagship live case → Stage 11 live loop → set `FLAGSHIP_CASE_ID`.
+5. B12 → deploy the UI; record the video (docs/video-script.md); submit (docs/devpost.md checklist).
 
 Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3, B4, B5, B11).
 
@@ -158,6 +167,11 @@ Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3
 - [x] Rate limits on public endpoints; approval gates; no secrets to the client; checked uploads
 - [x] Performance: fixture cases ~2.5 s end to end; the live flagship should take well under 4 min, to be measured on B1
 - [x] README run instructions + `scripts/dev_up.sh`
+
+## Stage 16 — Submission package (written; recording and submitting need the human)
+- [x] `docs/architecture.md` + README diagram; `docs/video-script.md` (2:45); `docs/devpost.md` with feedback, testing
+      instructions and the checklist
+- [ ] Demo URL, video, Devpost submission (B10, B12)
 
 ## Last verification
 ```
