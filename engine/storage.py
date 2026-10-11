@@ -86,13 +86,52 @@ class S3BlobStore:
         return f"{base.rstrip('/')}/{key}" if base else None
 
 
+class PgBlobStore:
+    """Blobs in the `blobs` table: survives hosts whose disk is wiped on sleep or redeploy (Render free)."""
+
+    name = "postgres"
+
+    async def put(self, key: str, data: bytes, content_type: str = "application/octet-stream") -> str:
+        from engine import db
+
+        await db.execute(
+            """INSERT INTO blobs (key, data, content_type) VALUES (%s,%s,%s)
+               ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data, content_type = EXCLUDED.content_type""",
+            (key, data, content_type),
+        )
+        return key
+
+    async def get(self, key: str) -> bytes:
+        from engine import db
+
+        row = await db.fetchrow("SELECT data FROM blobs WHERE key = %s", (key,))
+        if row is None:
+            raise FileNotFoundError(key)
+        return bytes(row["data"])
+
+    async def exists(self, key: str) -> bool:
+        from engine import db
+
+        return await db.fetchrow("SELECT 1 FROM blobs WHERE key = %s", (key,)) is not None
+
+    def public_url(self, key: str) -> str | None:
+        return None
+
+
 _store: BlobStore | None = None
 
 
 def get_blob_store() -> BlobStore:
+    """S3 when a bucket is set; else Postgres when a real database is set; else a local directory.
+
+    WHYDUNIT_BLOB_STORE=s3|postgres|local overrides the choice.
+    """
     global _store
     if _store is None:
-        _store = S3BlobStore() if env("S3_BUCKET") else LocalBlobStore()
+        kind = env("WHYDUNIT_BLOB_STORE") or (
+            "s3" if env("S3_BUCKET") else "postgres" if env("DATABASE_URL") else "local"
+        )
+        _store = {"s3": S3BlobStore, "postgres": PgBlobStore}.get(kind, LocalBlobStore)()
     return _store
 
 

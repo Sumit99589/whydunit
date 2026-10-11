@@ -123,3 +123,23 @@ async def test_replay_chunk_gzip(client, pg):
     row = await pg.fetchrow("SELECT event_count FROM replays WHERE session_id = %s", (sid,))
     assert row["event_count"] == 2
     assert (await pg.fetchrow("SELECT has_replay FROM sessions WHERE id = %s", (sid,)))["has_replay"]
+
+
+async def test_postgres_blob_store_round_trip(pg, monkeypatch):
+    from engine.storage import PgBlobStore, get_blob_store
+
+    set_blob_store(None)
+    assert isinstance(get_blob_store(), PgBlobStore)  # DATABASE_URL set, no bucket
+    store = get_blob_store()
+    key = f"replays/t/{uuid.uuid4().hex}/00000.json.gz"
+    assert not await store.exists(key)
+    await store.put(key, b"first")
+    await store.put(key, b"second", "application/gzip")
+    assert await store.exists(key)
+    assert await store.get(key) == b"second"
+    with pytest.raises(FileNotFoundError):
+        await store.get(key + "x")
+    monkeypatch.setenv("WHYDUNIT_BLOB_STORE", "local")
+    set_blob_store(None)
+    assert isinstance(get_blob_store(), LocalBlobStore)
+    set_blob_store(None)
