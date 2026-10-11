@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from engine import db
 from engine.api import ingest
+from engine.mock_ads import api as mock_ads_api
 from engine.settings import env
 
 
@@ -24,11 +25,12 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
-        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
         allow_headers=["*"],
         max_age=3600,
     )
     app.include_router(ingest.router)
+    app.include_router(mock_ads_api.router)
 
     @app.get("/health")
     async def health() -> dict:
