@@ -77,6 +77,8 @@ def _case_open(args: argparse.Namespace) -> int:
             while "case" not in state:
                 await asyncio.sleep(0.05)
             async for e in ev.stream(state["case"], follow=True, poll_s=0.2):
+                if e.get("heartbeat"):
+                    continue
                 print(_fmt_event(e), flush=True)
                 if e["type"] == "investigation_complete":
                     break
@@ -147,6 +149,41 @@ def _fmt_event(e: dict) -> str:
     return f"{e['seq']:>4} {t:<22} {actor:<10} {body}"
 
 
+def _watch(args: argparse.Namespace) -> int:
+    import logging
+    from datetime import datetime
+
+    from engine import db
+    from engine.runtime.watcher import watch_once
+
+    logging.basicConfig(level=logging.INFO)
+
+    async def run() -> dict:
+        try:
+            now = datetime.fromisoformat(args.now) if args.now else None
+            return await watch_once(args.world, now, investigate=not args.dry_run)
+        finally:
+            await db.close_pool()
+
+    print(json.dumps(asyncio.run(run()), indent=2, default=str))
+    return 0
+
+
+def _fix_approve(args: argparse.Namespace) -> int:
+    from engine import db
+    from engine.agents import fixer
+
+    async def run() -> dict:
+        try:
+            return await fixer.approve(args.fix_id)
+        finally:
+            await db.close_pool()
+
+    fix = asyncio.run(run())
+    print(f"{fix['id']}: {fix['status']}")
+    return 0
+
+
 def _serve(args: argparse.Namespace) -> int:
     import uvicorn
 
@@ -188,6 +225,17 @@ def build_parser() -> argparse.ArgumentParser:
     co.add_argument("--detectives", help="comma-separated subset, e.g. funnel")
     co.add_argument("--no-lead", action="store_true")
     co.set_defaults(func=_case_open)
+
+    wa = sub.add_parser("watch", help="one watcher pass: verify open cases, open a case on a sustained drop")
+    wa.add_argument("--world", default="live")
+    wa.add_argument("--now", help="ISO time to evaluate at")
+    wa.add_argument("--dry-run", action="store_true", help="detect only; don't open a case")
+    wa.set_defaults(func=_watch)
+
+    fp = sub.add_parser("fix").add_subparsers(dest="fix_cmd", required=True)
+    fa = fp.add_parser("approve", help="apply an approval-gated fix (merge PR / restore budget / mitigation)")
+    fa.add_argument("fix_id")
+    fa.set_defaults(func=_fix_approve)
 
     sp = sub.add_parser("serve")
     sp.add_argument("--host", default="127.0.0.1")

@@ -149,7 +149,8 @@ def parse_incidents(spec: str, world_start: datetime, days: int) -> list[Inciden
         if kind == "public_holiday" and not at:
             start = start.replace(hour=0, minute=0)
         end = None
-        if kind == "dependency_outage":
+        if kind == "dependency_outage" or "hours" in params:
+            # Any incident can be given a duration (e.g. a bug that is fixed after 48 hours).
             end = start + timedelta(hours=float(params.get("hours", 6)))
         out.append(Incident(kind, start, params, end))
     return out

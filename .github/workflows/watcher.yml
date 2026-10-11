@@ -1,0 +1,55 @@
+name: watcher
+
+# The always-on watcher (PLAN Stage 11): verifies cases after fixes, and opens a case by itself when the headline
+# metric has dropped beyond normal variance for long enough. Idle until its secrets exist.
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: watcher
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEBIUS_API_KEY: ${{ secrets.NEBIUS_API_KEY }}
+      TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+      ACME_GITHUB_TOKEN: ${{ secrets.ACME_GITHUB_TOKEN }}
+      ACME_REPO: ${{ vars.ACME_REPO || 'Sumit99589/acme-demo' }}
+      WHYDUNIT_GITHUB_TOKEN: ${{ secrets.WHYDUNIT_GITHUB_TOKEN }}
+      NEBIUS_PROJECT_ID: ${{ secrets.NEBIUS_PROJECT_ID }}
+      S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
+      S3_REGION: ${{ secrets.S3_REGION }}
+      S3_BUCKET: ${{ secrets.S3_BUCKET }}
+      S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+      S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+      WATCHER_WEBHOOK_URL: ${{ secrets.WATCHER_WEBHOOK_URL }}
+      WHYDUNIT_UI_URL: ${{ vars.WHYDUNIT_UI_URL }}
+    steps:
+      - name: Check configuration
+        id: cfg
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::notice::Watcher not configured yet (needs DATABASE_URL). Skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.cfg.outputs.ready == 'true'
+      - uses: astral-sh/setup-uv@v6
+        if: steps.cfg.outputs.ready == 'true'
+        with:
+          enable-cache: true
+      - if: steps.cfg.outputs.ready == 'true'
+        run: uv sync --frozen --no-dev
+      - if: steps.cfg.outputs.ready == 'true'
+        run: uv run whydunit watch --world live

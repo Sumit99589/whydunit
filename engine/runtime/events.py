@@ -206,6 +206,8 @@ async def stream(
             if not follow:
                 return
             idle += poll_s
+            if int(idle / poll_s) % int(15 / poll_s) == 0:
+                yield {"heartbeat": True}
             if idle >= idle_timeout_s:
                 return
             await asyncio.sleep(poll_s)

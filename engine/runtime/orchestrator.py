@@ -109,18 +109,18 @@ async def investigate(
     detectives: list[str] | None = None,
     llm: LLM | None = None,
     with_lead: bool = True,
+    propose_fixes: bool = False,
     **kw: Any,
 ) -> dict[str, Any]:
+    """Open a case and run it to a verdict. Fixes are proposed for fixture worlds (as proposals only); on the live
+    world they are prepared (PRs opened) only when `propose_fixes` is set: by the watcher or an admin."""
     case, registry = await open_case(world, metric, **kw)
     ctx, reports = await run_detectives(case, registry, detectives, llm=llm)
     verdict = None
     if with_lead:
-        try:
-            from engine.agents.lead import LeadDetective
-        except ImportError:
-            LeadDetective = None  # noqa: N806
-        if LeadDetective is not None:
-            verdict = await LeadDetective(ctx, reports).run()
+        from engine.agents.lead import LeadDetective
+
+        verdict = await LeadDetective(ctx, reports).run()
     await ev.set_status(
         case.id, "verdict" if verdict else "investigating", cost=ctx.meter.summary(), detectives=list(reports)
     )
@@ -138,4 +138,8 @@ async def investigate(
             for k, v in reports.items()
         },
     )
+    if verdict and verdict["kind"] in ("causes", "measurement") and (propose_fixes or world != "live"):
+        from engine.agents import fixer
+
+        await fixer.propose(case.id, world, verdict)
     return {"case": case, "ctx": ctx, "reports": reports, "verdict": verdict}

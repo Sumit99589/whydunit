@@ -1,0 +1,14 @@
+# Always-on watcher (PLAN Stage 11).
+detect:
+  metric: paid_subs
+  lookback_hours: 24          # compare the last 24 h with the same hours one and two weeks earlier
+  min_drop: 0.15              # at least a 15% drop…
+  z_threshold: 3.0            # …that is beyond normal variance
+  dispersion: 0.006           # day-level overdispersion: Var = μ(1 + φμ), about 8% day-to-day noise
+  persist_hours: 36           # and has lasted this long (one bad afternoon is not a case)
+  window_days: 3              # the case window when one is opened
+verify:
+  settle_minutes: 30          # ignore the first half hour after a fix is applied
+  min_denominator: 30         # rates need at least this many attempts after the fix
+  min_visitors: 200
+  deadline_hours: 24          # reopen with an explanation if not recovered by then

@@ -6,7 +6,7 @@ import asyncio
 import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
@@ -46,6 +46,10 @@ async def open_case(body: OpenCase) -> dict[str, Any]:
                     pass
             await ev.set_status(case.id, "verdict" if verdict else "investigating", cost=ctx.meter.summary())
             await ctx.log.emit("investigation_complete", "whydunit", cost=ctx.meter.summary())
+            if verdict and verdict["kind"] in ("causes", "measurement") and body.world != "live":
+                from engine.agents import fixer
+
+                await fixer.propose(case.id, body.world, verdict)
         except Exception as e:  # noqa: BLE001
             log.exception("case %s failed", case.id)
             await ev.set_status(case.id, "failed", error=str(e)[:300])
@@ -178,6 +182,37 @@ async def series(case_id: str) -> dict[str, Any]:
     return out
 
 
+@router.post("/{case_id}/fixes/{fix_id}/approve")
+async def approve_fix(
+    case_id: str, fix_id: str, x_admin_key: str | None = Header(default=None)
+) -> dict[str, Any]:
+    """Approval-gated: merging a PR, changing an ad budget or switching on a mitigation needs the admin key."""
+    from engine.agents import fixer
+    from engine.settings import env
+
+    expected = env("WHYDUNIT_ADMIN_KEY")
+    if expected and x_admin_key != expected:
+        raise HTTPException(
+            403, "Approving a fix needs the admin key. On the public demo, fixes are shown, not applied."
+        )
+    try:
+        fix = await fixer.approve(fix_id)
+    except fixer.FixError as e:
+        raise HTTPException(409, str(e)) from e
+    return {"id": fix["id"], "status": fix["status"]}
+
+
+@router.post("/{case_id}/verify")
+async def verify(case_id: str, x_admin_key: str | None = Header(default=None)) -> dict[str, Any]:
+    from engine.runtime.verify import verify_case
+    from engine.settings import env
+
+    expected = env("WHYDUNIT_ADMIN_KEY")
+    if expected and x_admin_key != expected:
+        raise HTTPException(403, "admin key required")
+    return await verify_case(case_id)
+
+
 @router.get("/{case_id}/events")
 async def get_events(case_id: str, after: int = 0) -> list[dict[str, Any]]:
     case_id = await resolve(case_id)
@@ -199,6 +234,9 @@ async def stream(
         async for e in source:
             if await request.is_disconnected():
                 break
+            if e.get("heartbeat"):
+                yield ": heartbeat\n\n"  # keeps proxies and idle connections open
+                continue
             yield ev.sse(e)
             if e["type"] in ev.TERMINAL and replay is False and e["type"] != "investigation_complete":
                 break
@@ -207,5 +245,5 @@ async def stream(
     return StreamingResponse(
         gen(),
         media_type="text/event-stream",
-        headers={"cache-control": "no-cache", "x-accel-buffering": "no"},
+        headers={"cache-control": "no-cache, no-transform", "x-accel-buffering": "no"},
     )
