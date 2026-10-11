@@ -1,69 +1,54 @@
-import Image from "next/image";
+import Link from "next/link";
+import { HeroPreview } from "@/components/HeroPreview";
+
+const STEPS = [
+  ["Open a case", "On a metric that moved, or let the watcher open one when it spots a drop."],
+  ["Seven detectives investigate at once", "Deploys, the funnel, session recordings, payments, ads, support and the news, each through its own tools."],
+  ["The lead cross-examines them", "Claims without evidence are thrown out by code. A cause needs both a mechanism and matching timing."],
+  ["The drop is split between causes", "Exact Shapley shares with confidence intervals, plus an honest unexplained share."],
+  ["Fixes are opened and verified", "A pull request for a code bug, an approval for a config change, then it watches the metric recover."],
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
+      <section className="grid items-center gap-10 py-12 md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:py-20">
+        <div>
+          <h1 className="text-[44px] font-extrabold leading-[1.02] tracking-[-0.035em] sm:text-[64px]">Know why your numbers dropped.</h1>
+          <p className="mt-5 max-w-xl text-[18px] leading-relaxed text-ink-2">
+            Signups fell 23% since Tuesday? Whydunit sends a team of AI detectives through your deploys, analytics, session
+            recordings, ads, payments, support tickets and the news, and comes back with the answer, the proof, the fix, and
+            confirmation that the fix worked.
           </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/cases/flagship?replay=4" className="rounded-lg bg-ink px-4 py-2.5 font-semibold text-bg hover:opacity-90">Watch a solved case</Link>
+            <Link href="/playground" className="rounded-lg border border-line bg-surface px-4 py-2.5 font-semibold hover:border-ink-3">Investigate a fixture world</Link>
+            <Link href="/connect" className="rounded-lg px-4 py-2.5 font-semibold text-ink-2 hover:text-ink">Connect your product</Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        <HeroPreview />
+      </section>
+      <section className="border-t border-line py-12" aria-labelledby="how-h">
+        <h2 id="how-h" className="text-[22px] font-bold tracking-tight">How a case runs</h2>
+        <ol className="mt-6 grid gap-6 md:grid-cols-5">
+          {STEPS.map(([t, b], i) => (
+            <li key={t}>
+              <span className="text-[13px] font-semibold text-ink-3 tabular-nums">{i + 1}</span>
+              <h3 className="mt-1 font-semibold leading-snug">{t}</h3>
+              <p className="mt-1 text-[14px] leading-relaxed text-ink-2">{b}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+      <section className="border-t border-line py-10 text-[14px] text-ink-2" aria-labelledby="real-h">
+        <h2 id="real-h" className="font-semibold text-ink">What is real in the demo</h2>
+        <p className="mt-2 max-w-3xl leading-relaxed">
+          The sandbox startup, Acme Notes, is fictional, but its systems are real: GitHub, Vercel deployments, Stripe in test
+          mode, Whydunit&rsquo;s own analytics and session recordings, and live news through Tavily. The ad platform and the
+          visitor traffic are simulated, and are labelled that way everywhere. Models: NVIDIA Nemotron Nano, Super, Ultra and
+          Nano Omni on Nebius Token Factory.
+        </p>
+      </section>
     </div>
   );
 }

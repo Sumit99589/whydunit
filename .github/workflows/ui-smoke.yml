@@ -1,0 +1,60 @@
+name: ui-smoke
+
+# End-to-end UI check (Stage 10): engine + Postgres + `next start` + a real browser at desktop and phone widths.
+on:
+  push:
+    branches: [main]
+    paths: ["ui/**", "engine/**", "scripts/ci/ui_smoke.py", ".github/workflows/ui-smoke.yml"]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: pw
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:pw@127.0.0.1:5432/postgres
+      WHYDUNIT_ENGINE_URL: http://127.0.0.1:8000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: ui/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: ui/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: ui
+      - run: uv run whydunit db upgrade
+      - name: Investigate the flagship fixture world
+        run: uv run whydunit case open --world fixture:3inc > case.log && tail -3 case.log
+      - name: Start the engine
+        run: nohup uv run uvicorn engine.api.app:app --port 8000 > engine.log 2>&1 &
+      - run: pnpm build
+        working-directory: ui
+      - name: Start the UI
+        working-directory: ui
+        run: nohup pnpm start -p 3000 > ../ui.log 2>&1 & sleep 5
+      - run: uv run playwright install --with-deps chromium
+      - run: uv run python scripts/ci/ui_smoke.py http://127.0.0.1:3000 ui-shots
+      - if: always()
+        run: tail -50 engine.log ui.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ui-shots
+          path: ui-shots
+          retention-days: 14

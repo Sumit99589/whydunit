@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
+const ENGINE = process.env.WHYDUNIT_ENGINE_URL || "http://127.0.0.1:8000";
+
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
@@ -11,6 +12,10 @@ const nextConfig: NextConfig = {
         as: "*.css",
       },
     },
+  },
+  // The browser talks to the engine through this origin (no CORS, SSE included).
+  async rewrites() {
+    return [{ source: "/engine/:path*", destination: `${ENGINE}/:path*` }];
   },
 };
 

@@ -33,6 +33,15 @@ def create_app() -> FastAPI:
     app.include_router(cases.router)
     app.include_router(mock_ads_api.router)
 
+    @app.get("/connect")
+    async def connect() -> dict:
+        """Each evidence kind's connector ladder and which tier is active (live world)."""
+        from engine.connectors import live_registry
+        from engine.runtime.runner_client import RunnerClient
+
+        reg = live_registry()
+        return {"kinds": await reg.overview(), "runner": await RunnerClient().describe()}
+
     @app.get("/health")
     async def health() -> dict:
         row = await db.fetchrow("SELECT 1 AS ok")

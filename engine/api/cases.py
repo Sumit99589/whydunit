@@ -58,6 +58,23 @@ async def open_case(body: OpenCase) -> dict[str, Any]:
     return {"id": case.id, "stream": f"/cases/{case.id}/stream"}
 
 
+async def resolve(case_id: str) -> str:
+    """`flagship` → FLAGSHIP_CASE_ID, else the newest finished case (live first, then the 3-incident fixture)."""
+    if case_id != "flagship":
+        return case_id
+    from engine.settings import env
+
+    if env("FLAGSHIP_CASE_ID"):
+        return env("FLAGSHIP_CASE_ID")  # type: ignore[return-value]
+    row = await db.fetchrow(
+        "SELECT id FROM cases WHERE status IN ('closed', 'verdict', 'verifying', 'fixing') AND world IN ('live', 'fixture:3inc') "
+        "ORDER BY (world = 'live') DESC, (status = 'closed') DESC, created_at DESC LIMIT 1"
+    )
+    if not row:
+        raise HTTPException(404, "no flagship case yet")
+    return row["id"]
+
+
 @router.get("")
 async def list_cases(limit: int = 50) -> list[dict[str, Any]]:
     rows = await db.fetch(
@@ -70,6 +87,7 @@ async def list_cases(limit: int = 50) -> list[dict[str, Any]]:
 
 @router.get("/{case_id}")
 async def get_case(case_id: str) -> dict[str, Any]:
+    case_id = await resolve(case_id)
     case = await db.fetchrow("SELECT * FROM cases WHERE id = %s", (case_id,))
     if not case:
         raise HTTPException(404, "no such case")
@@ -91,8 +109,78 @@ async def get_case(case_id: str) -> dict[str, Any]:
     }
 
 
+_series_cache: dict[str, dict[str, Any]] = {}
+
+
+@router.get("/{case_id}/series")
+async def series(case_id: str) -> dict[str, Any]:
+    case_id = await resolve(case_id)
+    """Hourly and daily paid subscriptions (and visitors) for the case's history, plus chart annotations."""
+    if case_id in _series_cache:
+        return _series_cache[case_id]
+    from datetime import timedelta
+
+    import polars as pl
+
+    from engine.analysis.data import session_table
+    from engine.connectors import registry_for
+    from engine.connectors.base import Window
+
+    case = await db.fetchrow("SELECT * FROM cases WHERE id = %s", (case_id,))
+    if not case:
+        raise HTTPException(404, "no such case")
+    reg = registry_for(case["world"])
+    start = min(case["baseline_start"], case["window_start"] - timedelta(days=7))
+    b = await reg.fetch("funnel_events", Window(start, case["window_end"]), {})
+    sess = session_table(b.frame)
+    daily = (
+        sess.group_by(pl.col("started_at").dt.truncate("1d").alias("t"))
+        .agg(
+            pl.col("paid").sum().alias("paid"),
+            pl.len().alias("visitors"),
+            pl.col("signed_up").sum().alias("signups"),
+        )
+        .sort("t")
+    )
+    hourly = (
+        sess.group_by(pl.col("started_at").dt.truncate("6h").alias("t"))
+        .agg(pl.col("paid").sum().alias("paid"), pl.len().alias("visitors"))
+        .sort("t")
+    )
+    marks = []
+    for h in await db.fetch(
+        "SELECT statement, effect, status, created_by FROM hypotheses WHERE case_id = %s", (case_id,)
+    ):
+        if h["effect"].get("start"):
+            marks.append(
+                {
+                    "t": h["effect"]["start"],
+                    "label": h["statement"],
+                    "kind": h["created_by"],
+                    "status": h["status"],
+                }
+            )
+    out = {
+        "window": {"start": case["window_start"].isoformat(), "end": case["window_end"].isoformat()},
+        "baseline": {"start": case["baseline_start"].isoformat(), "end": case["baseline_end"].isoformat()},
+        "daily": [
+            {"t": r["t"].isoformat(), **{k: int(r[k]) for k in ("paid", "visitors", "signups")}}
+            for r in daily.to_dicts()
+        ],
+        "six_hourly": [
+            {"t": r["t"].isoformat(), "paid": int(r["paid"]), "visitors": int(r["visitors"])}
+            for r in hourly.to_dicts()
+        ],
+        "annotations": marks,
+    }
+    if case["status"] in ("verdict", "closed"):
+        _series_cache[case_id] = out
+    return out
+
+
 @router.get("/{case_id}/events")
 async def get_events(case_id: str, after: int = 0) -> list[dict[str, Any]]:
+    case_id = await resolve(case_id)
     return await ev.events_since(case_id, after, limit=5000)
 
 
@@ -100,6 +188,7 @@ async def get_events(case_id: str, after: int = 0) -> list[dict[str, Any]]:
 async def stream(
     case_id: str, request: Request, replay: bool = False, speed: float = 1.0, after: int = 0
 ) -> StreamingResponse:
+    case_id = await resolve(case_id)
     if not await db.fetchrow("SELECT 1 FROM cases WHERE id = %s", (case_id,)):
         raise HTTPException(404, "no such case")
     last = int(request.headers.get("last-event-id") or after or 0)
