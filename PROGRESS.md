@@ -1,7 +1,7 @@
 # Progress
 
-Current stage: **Stage 7 — Agent runtime and the first detective** (Stages 1–3 and 5 built, with their
-remaining "done when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages 4 and 6 done).
+Current stage: **Stage 8 — The remaining six detectives** (Stages 1–3 and 5 built, with their remaining
+"done when" checks waiting on credentials in BLOCKERS.md per rule A7.3; Stages 4, 6 and 7 done).
 
 Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3, B4, B5, B11).
 
@@ -76,9 +76,19 @@ Simulator start time: **not started** (waiting on BLOCKERS critical path: B2, B3
       segments recovered; noise and weekend dip judged "within normal variance"; CUSUM times all three
       incidents within 1 h (`tests/test_analysis.py`, 12 tests)
 
+## Stage 7 — Agent runtime and the first detective ✅ (LLM path verified with a scripted backend; real Nemotron waits on B1)
+- [x] Schemas: Case, Finding, Hypothesis + EffectSpec, DetectiveReport, Question/Answer, MetricRef
+- [x] Detective loop: playbook → Nano tool loop → Super JSON report → validator (one re-prompt, then suspicion)
+- [x] Validator: evidence must exist in the case; numbers must match referenced metrics; tier-scaled confidence
+- [x] Case event log in `case_events`, SSE `GET /cases/{id}/stream` (live and `?replay=1&speed=4`), cases API
+- [x] Funnel detective; CLI `uv run whydunit case open --world fixture:3inc --metric paid_subs`
+- [x] Done when: on fixture:3inc it reports the real drop, "signup rate fell, concentrated in WebKit (Safari and
+      every iOS browser) 9.5% → 0.9% from Thu 09:00", "paid traffic 900 → 596/day from Thu 21:00", and
+      "payment success concentrated in Brazil 95.3% → 64.5%"; all evidence valid; events in DB; SSE read with curl
+
 ## Last verification
 ```
-uv run pytest -q              → 54 passed
+uv run pytest -q              → 60 passed
 uv run ruff check .           → clean
 snippet: pnpm test/typecheck  → 10 passed, clean
 acme-demo: tsc + eslint       → clean

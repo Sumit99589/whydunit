@@ -60,6 +60,93 @@ def _world_create(args: argparse.Namespace) -> int:
     return 0
 
 
+def _case_open(args: argparse.Namespace) -> int:
+    import logging
+
+    from engine import db
+    from engine.runtime import events as ev
+    from engine.runtime.orchestrator import investigate
+
+    logging.basicConfig(level=logging.WARNING)
+
+    async def run() -> int:
+        done = asyncio.Event()
+        state: dict = {}
+
+        async def printer() -> None:
+            while "case" not in state:
+                await asyncio.sleep(0.05)
+            async for e in ev.stream(state["case"], follow=True, poll_s=0.2):
+                print(_fmt_event(e), flush=True)
+                if e["type"] == "investigation_complete":
+                    break
+            done.set()
+
+        async def runner() -> dict:
+            from engine.runtime import orchestrator
+
+            orig = orchestrator.open_case
+
+            async def open_and_mark(*a, **k):
+                case, reg = await orig(*a, **k)
+                state["case"] = case.id
+                return case, reg
+
+            orchestrator.open_case = open_and_mark
+            try:
+                return await investigate(
+                    args.world,
+                    args.metric,
+                    detectives=args.detectives.split(",") if args.detectives else None,
+                    with_lead=not args.no_lead,
+                )
+            finally:
+                orchestrator.open_case = orig
+
+        try:
+            p = asyncio.create_task(printer())
+            res = await runner()
+            await asyncio.wait_for(done.wait(), timeout=30)
+            p.cancel()
+            print(f"\ncase {res['case'].id} — stream: GET /cases/{res['case'].id}/stream")
+            return 0
+        finally:
+            await db.close_pool()
+
+    return asyncio.run(run())
+
+
+def _fmt_event(e: dict) -> str:
+    p, actor = e["payload"], e["actor"] or ""
+    t = e["type"]
+    if t == "evidence_pinned":
+        x = p["evidence"]
+        body = f"{x['id']} [{x['kind']} · {x['connector']} · tier {x['tier']}] {x['summary'][:110]}"
+    elif t in ("finding", "finding_rejected"):
+        f = p["finding"]
+        body = f"({f['kind']}, conf {f['confidence']:.2f}) {f['claim']}" + (
+            f"  ✗ {f.get('rejection_reason')}" if t == "finding_rejected" else ""
+        )
+    elif t == "tool_call":
+        body = f"{p['tool']}({json.dumps(p.get('args'))[:90]})"
+    elif t == "tool_result":
+        body = f"{p['tool']} → {json.dumps(p.get('result'), default=str)[:110]}"
+    elif t == "detective_report":
+        r = p["report"]
+        body = (
+            f"report ({r['model_mode']}): {len(r['findings'])} findings, {len(r['suspicions'])} suspicions, "
+            f"{len(r['cannot_determine'])} cannot-determine in {p.get('seconds')}s"
+        )
+    elif t == "case_opened":
+        c = p["case"]
+        body = (
+            f"{c['question']} [{p['world_label']}] window {c['window_start'][:16]} → {c['window_end'][:16]}"
+        )
+    else:
+        body = json.dumps(p, default=str)[:160]
+    return f"{e['seq']:>4} {t:<22} {actor:<10} {body}"
+
+
 def _serve(args: argparse.Namespace) -> int:
     import uvicorn
 
@@ -93,6 +180,14 @@ def build_parser() -> argparse.ArgumentParser:
     wc.add_argument("--seed", type=int, default=7)
     wc.add_argument("--no-truth", action="store_true", help="skip the counterfactual ground-truth worlds")
     wc.set_defaults(func=_world_create)
+
+    cp = sub.add_parser("case").add_subparsers(dest="case_cmd", required=True)
+    co = cp.add_parser("open", help="open and investigate a case")
+    co.add_argument("--world", default="fixture:3inc", help="live or fixture:<preset>")
+    co.add_argument("--metric", default="paid_subs")
+    co.add_argument("--detectives", help="comma-separated subset, e.g. funnel")
+    co.add_argument("--no-lead", action="store_true")
+    co.set_defaults(func=_case_open)
 
     sp = sub.add_parser("serve")
     sp.add_argument("--host", default="127.0.0.1")

@@ -126,3 +126,21 @@ Non-obvious choices and why. Items marked **revisit** are simplifications to com
 - **D37. "Real drop vs normal variance"** compares the window with the same weekdays in prior weeks and
   an overdispersed Poisson variance estimated from history (|z| ≥ 2.5 and ≥ 5% change). A weekend dip
   against preceding weekdays is therefore reported as seasonal.
+
+## Stage 7
+
+- **D38. Playbook first, model second.** Each detective runs a deterministic playbook (the standard checks,
+  computed by code, pinning evidence and metrics), so a case always produces validated findings, even with
+  no Token Factory key, a model outage or an exhausted budget. When a key is present, Nano extends the
+  investigation through tools and Super writes the final report; if any model step fails, the playbook's
+  findings stand. Reports record `model_mode` so the UI can say which happened.
+- **D39. Analysis results are evidence too**: every computed table (decomposition, segment breakdown,
+  change timing) is pinned as an `analysis:*` bundle that names its source evidence and inherits the
+  weakest source tier. Findings cite both the raw source and the analysis.
+- **D40. The validator strips non-claims before matching numbers**: dates, times, ids, shas, versions,
+  device names such as "iPhone 15". Every other number must match a referenced metric within rounding
+  (half a unit in the last shown digit plus 1%). Rates may be written as percentages. Inference findings
+  get an extra ×0.85 on confidence.
+- **D41. SSE polls the event table** (0.4 s) instead of an in-process pub/sub, so streaming works across
+  processes and hosts (the engine may run several workers). Replay re-emits stored events with their
+  original gaps, capped at 4 s and divided by the requested speed.

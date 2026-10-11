@@ -49,6 +49,12 @@ def assess_change(
     """Real change vs normal variance, for a funnel step count (e.g. 'paid')."""
     cfg = load_config("metrics").get("significance", {})
     z_thr, min_rel = float(cfg.get("z_threshold", 2.5)), float(cfg.get("min_relative_change", 0.05))
+    # History can't start before the data does (otherwise empty days look like a collapse in prior weeks).
+    if sess.height:
+        first = sess["started_at"].min()
+        first_day = first.replace(hour=0, minute=0, second=0, microsecond=0)
+        if first_day > history_start:
+            history_start = first_day
     daily = daily_counts(sess, step, history_start, window.end)
     vals = daily["n"].to_numpy().astype(float)
     days = daily["day"].to_list()
