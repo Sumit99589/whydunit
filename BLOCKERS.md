@@ -27,5 +27,5 @@ back a day** (deadline Oct 30).
 | B7 | Real Stripe declines | Stripe account in **test mode**: `STRIPE_SECRET_KEY` (sk_test_…) on Acme's Vercel project and in `.env`. Without it, Acme's checkout uses a mock with identical outcomes. | open |
 | B8 | World and Voice detectives, Tavily bonus | Set `TAVILY_API_KEY=` in `.env` (the Builders Program includes Tavily credits). | open |
 | B9 | Runner as Nebius Serverless Job (Stage 8) | Create a Nebius AI Cloud project, install the `nebius` CLI and run `nebius profile create`, then set `NEBIUS_PROJECT_ID=`. Confirm a Serverless Job can pull a public GHCR image. | open |
-| B12 | Judge demo | Import this repo into Vercel with root directory `ui` and env `WHYDUNIT_ENGINE_URL`; set the repo variable `WHYDUNIT_UI_URL` to the resulting URL (uptime check). | open |
+| B12 | Judge demo | ~~Import this repo into Vercel~~ — done by the agent 2026-10-12: project `whydunit` (root `ui`), `https://whydunit-gamma.vercel.app`, builds only when `ui/` changes; repo variable `WHYDUNIT_UI_URL` set. `live-shots` workflow verifies it end to end. | done |
 | B10 | Submission | Register on Devpost and join the hackathon; have a YouTube channel ready for the video. | open |

@@ -11,7 +11,7 @@ Stage 17 starts only after the submission is drafted on Devpost (PLAN), which ne
 2. B1 → `scripts/discover_models.py --write`, `scripts/smoke_llm.py`; rerun `whydunit evals run` in LLM mode.
 3. B8 → Tavily cassettes; B7 → real Stripe declines; B6 + B9 → runner as a Nebius Serverless Job.
 4. At T+5.5d the watcher should auto-open the flagship live case → Stage 11 live loop → set `FLAGSHIP_CASE_ID`.
-5. B12 → deploy the UI; record the video (docs/video-script.md); submit (docs/devpost.md checklist).
+5. ~~B12~~ UI live at https://whydunit-gamma.vercel.app (all live-shots checks pass, 2026-10-12); record the video (docs/video-script.md); submit (docs/devpost.md checklist).
 
 Simulator start time: **2026-10-11T16:51:36Z** (T+4d = Oct 15 16:51 UTC deploy bug; flagship case ≈ Oct 17 04:51 UTC).
 An earlier start at 14:47Z was discarded: a test run with real credentials merged the incident branch early; acme-demo
