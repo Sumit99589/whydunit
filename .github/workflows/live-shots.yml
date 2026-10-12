@@ -1,0 +1,52 @@
+name: live-shots
+
+# Screenshots of the deployed system (UI on Vercel, engine on Render, Acme on Vercel), taken on a runner so the
+# dev machine never starts a browser. Same checks as ui-smoke, against the public URLs.
+on:
+  workflow_dispatch:
+    inputs:
+      ui_url:
+        description: "Deployed UI"
+        default: "https://whydunit-gamma.vercel.app"
+      acme_url:
+        description: "Deployed Acme"
+        default: "https://acme-demo-lac.vercel.app"
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run playwright install --with-deps chromium
+      - name: Wake the engine
+        run: curl -s -m 120 --retry 3 "${{ inputs.ui_url }}/engine/health"
+      - run: uv run python scripts/ci/ui_smoke.py "${{ inputs.ui_url }}" live-shots
+      - name: Acme
+        run: |
+          uv run python - <<'EOF'
+          import asyncio
+          from playwright.async_api import async_playwright
+
+          async def main():
+              async with async_playwright() as p:
+                  b = await p.chromium.launch()
+                  page = await b.new_page(viewport={"width": 1440, "height": 900})
+                  for path, name in [("/?wd_disable=1", "acme-landing"), ("/pricing?wd_disable=1", "acme-pricing"),
+                                     ("/signup?wd_disable=1", "acme-signup")]:
+                      await page.goto("${{ inputs.acme_url }}" + path, wait_until="networkidle")
+                      await page.screenshot(path=f"live-shots/{name}.png")
+                  await b.close()
+
+          asyncio.run(main())
+          EOF
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-shots
+          path: live-shots
+          retention-days: 14
