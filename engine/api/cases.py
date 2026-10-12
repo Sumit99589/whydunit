@@ -169,8 +169,8 @@ _series_cache: dict[str, dict[str, Any]] = {}
 
 @router.get("/{case_id}/series")
 async def series(case_id: str) -> dict[str, Any]:
-    case_id = await resolve(case_id)
     """Hourly and daily paid subscriptions (and visitors) for the case's history, plus chart annotations."""
+    case_id = await resolve(case_id)
     if case_id in _series_cache:
         return _series_cache[case_id]
     from datetime import timedelta
@@ -228,7 +228,8 @@ async def series(case_id: str) -> dict[str, Any]:
         ],
         "annotations": marks,
     }
-    if case["status"] in ("verdict", "closed"):
+    # Hypotheses are final from the verdict on.
+    if case["status"] in ("verdict", "fixing", "verifying", "closed"):
         _series_cache[case_id] = out
     return out
 
