@@ -143,3 +143,8 @@ async def test_postgres_blob_store_round_trip(pg, monkeypatch):
     set_blob_store(None)
     assert isinstance(get_blob_store(), LocalBlobStore)
     set_blob_store(None)
+
+
+async def test_unknown_fixture_world_is_rejected(client):
+    r = await client.post("/cases", json={"world": "fixture:no_such_world", "metric": "paid_subs"})
+    assert r.status_code == 422

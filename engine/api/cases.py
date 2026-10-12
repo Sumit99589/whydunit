@@ -74,6 +74,13 @@ async def open_case(
 
     if not (body.world == "live" or body.world.startswith("fixture:")):
         raise HTTPException(422, "world must be 'live' or 'fixture:<name>'")
+    if body.world.startswith("fixture:"):
+        from engine.fixtures.world import WORLDS_DIR
+        from engine.settings import load_config
+
+        name = body.world.removeprefix("fixture:")
+        if name not in load_config("worlds") and not (WORLDS_DIR / f"{name}.duckdb").exists():
+            raise HTTPException(422, f"unknown fixture world {name!r}")
     await guard(request, x_admin_key)
     case, registry = await orchestrator.open_case(body.world, body.metric)
 

@@ -14,6 +14,8 @@ COPY config ./config
 COPY migrations ./migrations
 COPY alembic.ini ./
 RUN uv sync --frozen --no-dev
+# Pre-generate every fixture world so the playground never builds one at request time on a small host.
+RUN uv run --no-sync python -c "from engine.fixtures.world import resolve_world; from engine.settings import load_config; [resolve_world(n) for n in load_config('worlds')]"
 
 ENV PORT=8000
 EXPOSE 8000
