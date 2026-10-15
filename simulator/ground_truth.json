@@ -16,8 +16,8 @@
       "fired_at": "2026-10-15T17:00:01.056269+00:00",
       "details": {
         "pr_url": "https://github.com/Sumit99589/acme-demo/pull/2",
-        "pr_number": 2,
-        "merge_sha": "a5649eed237bc14fded036b66d5cc70318ae4e5e"
+        "merge_sha": "a5649eed237bc14fded036b66d5cc70318ae4e5e",
+        "pr_number": 2
       },
       "scheduled_end": null,
       "mitigated_at": null
