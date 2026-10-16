@@ -33,8 +33,13 @@
         }
       },
       "scheduled_at": "2026-10-16T04:51:36.474406+00:00",
-      "fired_at": null,
-      "details": null,
+      "fired_at": "2026-10-16T05:00:00.611742+00:00",
+      "details": {
+        "at": "2026-10-16 05:00:00.611742+00:00",
+        "new": 150.0,
+        "old": 450.0,
+        "change_event_id": 1
+      },
       "scheduled_end": null,
       "mitigated_at": null
     },
