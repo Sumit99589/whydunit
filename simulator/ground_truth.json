@@ -54,8 +54,11 @@
         }
       },
       "scheduled_at": "2026-10-16T16:51:36.474406+00:00",
-      "fired_at": null,
-      "details": null,
+      "fired_at": "2026-10-16T17:00:00.642806+00:00",
+      "details": {
+        "country": "BR",
+        "decline_rate": 0.45
+      },
       "scheduled_end": "2026-10-20T16:51:36.474406+00:00",
       "mitigated_at": null
     }
